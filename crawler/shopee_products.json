@@ -1,0 +1,19 @@
+
+[
+  {
+    "name": "Bình giữ nhiệt mẫu",
+    "name_vi": "Bình giữ nhiệt",
+    "description": "Sản phẩm mẫu dùng kiểm tra chức năng nhập dữ liệu",
+    "price": 150000,
+    "image_url": "",
+    "product_url": "https://example.com/gifty-test-001",
+    "affiliate_url": null,
+    "shop_name": "Shop mẫu",
+    "category": "Đồ gia dụng",
+    "gender": "Unisex",
+    "age_group": "18-25",
+    "rating": null,
+    "review_count": 0,
+    "sold_count": 0
+  }
+]
