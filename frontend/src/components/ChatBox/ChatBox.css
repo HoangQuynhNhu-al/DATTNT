@@ -1,0 +1,675 @@
+
+/* ========================================
+   GIFTY CHAT - OVERLAY
+======================================== */
+
+.chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(49, 35, 27, 0.48);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* ========================================
+   CHAT CONTAINER
+======================================== */
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  height: min(720px, calc(100dvh - 36px));
+  min-height: 420px;
+  overflow: hidden;
+  background: #fffdf9;
+  border: 1px solid #f0e3d9;
+  border-radius: 22px;
+  box-shadow: 0 24px 80px rgba(53, 31, 21, 0.22);
+  animation: gifty-chat-enter 0.24s ease-out;
+}
+
+@keyframes gifty-chat-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ========================================
+   HEADER
+======================================== */
+
+.chat-header {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 76px;
+  padding: 12px 18px;
+  color: #fffaf6;
+  background: linear-gradient(120deg, #c85e3c 0%, #df7954 58%, #ed9872 100%);
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: #fffaf6;
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: 0.1px;
+}
+
+.chat-title-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.17);
+  font-size: 21px;
+}
+
+.close-chat {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 11px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.13);
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.close-chat:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(4deg);
+}
+
+.close-chat:focus-visible,
+.send-button:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.65);
+  outline-offset: 3px;
+}
+
+/* ========================================
+   CHAT BODY
+======================================== */
+
+.chat-body {
+  flex: 1;
+  min-height: 0;
+  padding: 22px 17px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background:
+    radial-gradient(
+      ellipse at top left,
+      rgba(255, 231, 215, 0.42),
+      transparent 48%
+    ),
+    #fffaf5;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.chat-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.chat-body::-webkit-scrollbar-thumb {
+  border-radius: 20px;
+  background: #e6cfc1;
+}
+
+.chat-body::-webkit-scrollbar-thumb:hover {
+  background: #d8b7a5;
+}
+
+.chat-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ========================================
+   MESSAGE ROW
+======================================== */
+
+.message-row {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 17px;
+}
+
+.bot-row {
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 9px;
+}
+
+.user-row {
+  justify-content: flex-end;
+}
+
+/* ========================================
+   BOT AVATAR
+======================================== */
+
+.bot-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 31px;
+  border: 1px solid #f0d9cb;
+  border-radius: 11px;
+  background: #fff0e5;
+  font-size: 16px;
+  box-shadow: 0 2px 6px rgba(128, 68, 40, 0.05);
+}
+
+/* ========================================
+   MESSAGE GROUP
+======================================== */
+
+.message-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 83%;
+}
+
+.bot-row .message-group {
+  align-items: flex-start;
+}
+
+.user-row .message-group {
+  align-items: flex-end;
+}
+
+/* ========================================
+   MESSAGE BUBBLE
+======================================== */
+
+.message-bubble {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 12px 15px;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.bot-bubble {
+  border: 1px solid #eee2d9;
+  border-radius: 5px 16px 16px 16px;
+  color: #493a31;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(83, 50, 34, 0.04);
+}
+
+.user-bubble {
+  border: 1px solid rgba(190, 84, 52, 0.12);
+  border-radius: 16px 5px 16px 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #cb603e, #e5825b);
+  box-shadow: 0 4px 12px rgba(190, 84, 52, 0.13);
+}
+
+/* ========================================
+   TYPING ANIMATION
+======================================== */
+
+.typing-bubble {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 54px;
+  padding: 14px 16px;
+}
+
+.typing-bubble span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d98565;
+  animation: gifty-typing 1.15s infinite ease-in-out;
+}
+
+.typing-bubble span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-bubble span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes gifty-typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* ========================================
+   PRODUCTS IN CHAT
+======================================== */
+
+.chat-products {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+/* Card sản phẩm được tái sử dụng từ ProductCard */
+
+.chat-products .product-card {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  overflow: hidden;
+  border: 1px solid #eee1d7;
+  border-radius: 10px;
+  background: #fffdf9;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.chat-products .product-card:hover {
+  transform: none;
+  border-color: #e5c2af;
+  box-shadow: 0 7px 20px rgba(93, 53, 33, 0.08);
+}
+
+/* Ảnh sản phẩm */
+
+.chat-products .product-image-link {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: #f8f1e9;
+}
+
+.chat-products .product-image {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 205px;
+  padding: 12px;
+  object-fit: contain;
+  background: #f8f1e9;
+}
+
+.chat-products .product-card:hover .product-image {
+  transform: none;
+}
+
+/* Phần thông tin sản phẩm */
+
+.chat-products .product-info {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px 15px 15px;
+}
+
+.chat-products .product-category {
+  align-self: flex-start;
+  max-width: 100%;
+  margin: 0 0 8px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  color: #a65336;
+  background: #fff0e7;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.45px;
+  line-height: 1.4;
+}
+
+.chat-products .product-name {
+  display: -webkit-box;
+  min-height: 0;
+  margin: 0 0 10px;
+  overflow: hidden;
+  color: #35271f;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.chat-products .product-price {
+  margin: 0 0 4px;
+  color: #c45f3d;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.chat-products .product-price-note {
+  margin: 0 0 13px;
+  color: #998b80;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Nút xem sản phẩm: chữ giữa, mũi tên bên phải */
+
+.chat-products .product-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 10px 34px;
+  border: 1px solid #d66e4a;
+  border-radius: 6px;
+  color: #fff;
+  background: #d66e4a;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.chat-products .product-button:hover {
+  border-color: #bd5838;
+  color: #fff;
+  background: #bd5838;
+  box-shadow: 0 4px 10px rgba(190, 91, 55, 0.14);
+}
+
+.chat-products .product-button-arrow {
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  font-size: 18px;
+  line-height: 1;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+}
+
+.chat-products .product-button:hover .product-button-arrow {
+  transform: translate(2px, calc(-50% - 2px));
+}
+
+/* ========================================
+   CHAT INPUT
+======================================== */
+
+.chat-input {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border-top: 1px solid #eee2d9;
+  background: #fffdf9;
+  box-shadow: 0 -4px 15px rgba(75, 46, 31, 0.025);
+}
+
+.chat-input input {
+  box-sizing: border-box;
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 16px;
+  border: 1px solid #e8d8cc;
+  border-radius: 8px;
+  outline: none;
+  color: #43342d;
+  background: #fffaf6;
+  font-family: inherit;
+  font-size: 14px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.chat-input input::placeholder {
+  color: #ad9a8e;
+}
+
+.chat-input input:focus {
+  border-color: #d98a6b;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(214, 110, 74, 0.1);
+}
+
+.chat-input input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   SEND BUTTON
+======================================== */
+
+.send-button {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid #d66e4a;
+  border-radius: 8px;
+  color: #fff;
+  background: #d66e4a;
+  font-size: 19px;
+  cursor: pointer;
+  box-shadow: 0 3px 9px rgba(190, 91, 55, 0.14);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #bd5838;
+  background: #bd5838;
+  box-shadow: 0 5px 12px rgba(190, 91, 55, 0.2);
+}
+
+.send-button:disabled {
+  border-color: #e7c9bb;
+  color: #fffaf7;
+  background: #e7c9bb;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   RESPONSIVE - TABLET / MOBILE
+======================================== */
+
+@media (max-width: 600px) {
+  .chat-overlay {
+    padding: 0;
+  }
+
+  .chat-container {
+    width: 100%;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    min-height: 68px;
+    padding: 10px 15px;
+  }
+
+  .chat-body {
+    padding: 18px 12px;
+  }
+
+  .message-group {
+    max-width: 86%;
+  }
+
+  .message-bubble {
+    padding: 11px 13px;
+    font-size: 13.5px;
+  }
+
+  .chat-products {
+    gap: 11px;
+  }
+
+  .chat-products .product-image {
+    height: 185px;
+  }
+
+  .chat-products .product-info {
+    padding: 12px;
+  }
+
+  .chat-products .product-name {
+    font-size: 13px;
+  }
+
+  .chat-products .product-price {
+    font-size: 17px;
+  }
+
+  .chat-input {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 400px) {
+  .chat-title {
+    gap: 9px;
+    font-size: 15px;
+  }
+
+  .chat-title-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+  }
+
+  .chat-body {
+    padding: 15px 10px;
+  }
+
+  .message-group {
+    max-width: 87%;
+  }
+
+  .message-bubble {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .bot-avatar {
+    width: 27px;
+    height: 27px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+
+  .chat-products .product-image {
+    height: 165px;
+  }
+
+  .chat-input {
+    gap: 8px;
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .chat-input input {
+    height: 43px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .send-button {
+    width: 43px;
+    height: 43px;
+    border-radius: 8px;
+  }
+}
+
+/* ========================================
+   REDUCE MOTION
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-container,
+  .typing-bubble span {
+    animation: none;
+  }
+
+  .chat-container,
+  .close-chat,
+  .send-button,
+  .chat-products .product-button,
+  .chat-products .product-button-arrow {
+    transition: none;
+  }
+}

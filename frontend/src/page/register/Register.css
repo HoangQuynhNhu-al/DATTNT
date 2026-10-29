@@ -1,0 +1,87 @@
+.register-page {
+  min-height: 650px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fffaf7;
+}
+
+.register-box {
+  width: 400px;
+
+  padding: 40px;
+
+  background: white;
+
+  border-radius: 18px;
+
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+
+  text-align: center;
+}
+
+.register-logo {
+  color: #ff6b35;
+
+  font-size: 25px;
+
+  font-weight: 800;
+
+  margin-bottom: 10px;
+}
+
+.register-box h1 {
+  margin-bottom: 25px;
+}
+
+.register-box input {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 13px;
+
+  margin-bottom: 15px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 9px;
+
+  outline: none;
+}
+
+.register-box button {
+  width: 100%;
+
+  padding: 13px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #ff6b35;
+
+  color: white;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.register-link {
+  margin-top: 20px;
+
+  color: #777;
+
+  font-size: 14px;
+}
+
+.register-link a {
+  margin-left: 5px;
+
+  color: #ff6b35;
+
+  text-decoration: none;
+}

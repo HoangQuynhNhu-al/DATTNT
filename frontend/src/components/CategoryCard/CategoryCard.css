@@ -1,0 +1,41 @@
+.category-card {
+  padding: 22px;
+
+  background: white;
+
+  border: 1px solid #eeeeee;
+  border-radius: 15px;
+
+  text-align: center;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.category-card:hover {
+  border-color: #ff6b35;
+  transform: translateY(-3px);
+}
+
+
+/* ICON */
+
+.category-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+
+/* TÊN DANH MỤC */
+
+.category-card h3 {
+  margin: 0;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  color: #333;
+
+  line-height: 1.4;
+}

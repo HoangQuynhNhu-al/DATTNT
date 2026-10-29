@@ -1,0 +1,623 @@
+
+/* =========================================
+   GIFTY ADMIN - WARM PEACH THEME
+   Chỉ thay đổi giao diện, không đổi logic
+========================================= */
+
+.admin-page {
+  --admin-orange: #c95d39;
+  --admin-orange-dark: #a94729;
+  --admin-text: #443126;
+  --admin-muted: #887568;
+  --admin-border: #ead6c8;
+
+  display: flex;
+  min-height: 100vh;
+  background: #fff4eb;
+  color: var(--admin-text);
+  font-family: inherit;
+}
+
+/* =========================================
+   SIDEBAR
+========================================= */
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  width: 245px;
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 26px 16px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #603b2c 0%, #432b22 100%);
+  color: #fff8f1;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 10px 30px;
+}
+
+.admin-brand > span {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.admin-brand strong,
+.admin-brand small {
+  display: block;
+}
+
+.admin-brand strong {
+  color: #ffcfad;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.admin-brand small {
+  margin-top: 5px;
+  color: #e3c4b0;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.admin-menu-title {
+  padding: 14px 12px 10px;
+  color: #c8a795;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.4px;
+}
+
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 12px;
+  margin: 3px 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #f1dfd3;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.admin-menu-item span {
+  width: 20px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 18px;
+}
+
+.admin-menu-item:hover,
+.admin-menu-item.active {
+  background: #85503a;
+  color: #fff4e9;
+}
+
+.admin-menu-item.active {
+  border-color: rgba(255, 213, 185, 0.18);
+}
+
+.admin-sidebar-bottom {
+  margin-top: auto;
+  padding: 20px 10px 0;
+  border-top: 1px solid #79503e;
+  color: #e0c7b7;
+  font-size: 13px;
+}
+
+.admin-sidebar-bottom span {
+  margin-right: 8px;
+}
+
+/* =========================================
+   MAIN CONTENT
+========================================= */
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 30px;
+}
+
+.admin-content-grid {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+}
+
+/* =========================================
+   DATA COLLECTION PANEL
+========================================= */
+
+.admin-panel {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 30px;
+  border: 1px solid #f0d9c9;
+  border-radius: 16px;
+  background: #fffaf6;
+  box-shadow: 0 7px 24px rgba(112, 65, 40, 0.07);
+}
+
+.admin-crawler-panel {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #f1e2d7;
+}
+
+.admin-eyebrow {
+  display: inline-block;
+  color: var(--admin-orange);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.admin-panel h2 {
+  margin: 9px 0;
+  color: var(--admin-text);
+  font-size: 25px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.admin-panel-heading p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.admin-heading-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid #f3d3c0;
+  border-radius: 13px;
+  background: #ffeadc;
+  color: var(--admin-orange);
+  font-size: 23px;
+}
+
+/* Tiêu đề riêng của khu vực crawler */
+.admin-crawler-panel .admin-panel-heading h2 {
+  margin: 8px 0 10px;
+  color: #443126;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 25px;
+  font-weight: 750;
+  line-height: 1.4;
+  letter-spacing: -0.3px;
+}
+
+/* =========================================
+   FORM LAYOUT
+========================================= */
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 23px 20px;
+}
+
+.admin-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.admin-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.admin-field label {
+  color: #50382a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* Input và select */
+
+.admin-field input,
+.admin-field select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #e8d6ca;
+  border-radius: 9px;
+  outline: none;
+  background: #fffdfb;
+  color: #49372c;
+  font-family: inherit;
+  font-size: 14px;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.admin-field input::placeholder {
+  color: #aa988c;
+}
+
+.admin-field input:hover,
+.admin-field select:hover {
+  border-color: #d9b5a0;
+  background: #fff;
+}
+
+.admin-field input:focus,
+.admin-field select:focus {
+  border-color: var(--admin-orange);
+  box-shadow: 0 0 0 3px rgba(201, 93, 57, 0.12);
+  background: #fff;
+}
+
+.admin-field input:disabled,
+.admin-field select:disabled {
+  cursor: not-allowed;
+  background: #f5eee8;
+  color: #a69a91;
+}
+
+.admin-field small {
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* =========================================
+   SUBMIT ROW
+========================================= */
+
+.admin-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid #f0e1d7;
+}
+
+.admin-submit-row p {
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.admin-submit-row p span {
+  margin-right: 6px;
+  color: var(--admin-orange);
+}
+
+/* Nút bắt đầu cào */
+
+.admin-submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 13px 22px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #d36b45, #b94d2d);
+  color: #fffaf5;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(169, 71, 41, 0.12);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-submit-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #bd5735, #963b22);
+  box-shadow: 0 6px 14px rgba(169, 71, 41, 0.2);
+  transform: translateY(-1px);
+}
+
+.admin-submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.admin-submit-button:focus-visible {
+  outline: 3px solid rgba(201, 93, 57, 0.25);
+  outline-offset: 3px;
+}
+
+.admin-submit-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+  box-shadow: none;
+  transform: none;
+}
+
+/* =========================================
+   THÔNG BÁO THÀNH CÔNG / LỖI
+========================================= */
+
+.admin-alert {
+  margin-top: 22px;
+  padding: 17px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.admin-alert strong {
+  display: block;
+  font-size: 15px;
+}
+
+.admin-alert p {
+  margin: 9px 0;
+  line-height: 1.7;
+}
+
+.admin-alert small {
+  display: block;
+  line-height: 1.6;
+}
+
+.admin-alert.error {
+  border: 1px solid #efc5bd;
+  background: #fff0ed;
+  color: #a43e30;
+}
+
+.admin-alert.success {
+  border: 1px solid #b9dfc3;
+  background: #f0faf1;
+  color: #27663a;
+}
+
+.admin-alert pre {
+  max-width: 100%;
+  margin: 12px 0 0;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #49372c;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* Giữ nguyên cấu trúc giao diện hiện tại */
+.admin-topbar,
+.admin-stat-grid,
+.admin-side-panels {
+  display: none !important;
+}
+
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+  .admin-sidebar {
+    width: 215px;
+  }
+
+  .admin-main {
+    padding: 24px;
+  }
+
+  .admin-panel {
+    padding: 24px;
+  }
+
+  .admin-form-grid {
+    gap: 20px 15px;
+  }
+}
+
+/* =========================================
+   RESPONSIVE - MOBILE
+========================================= */
+
+@media (max-width: 760px) {
+  .admin-page {
+    display: block;
+    min-height: 100vh;
+  }
+
+  .admin-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 15px;
+    overflow: visible;
+  }
+
+  .admin-brand {
+    padding: 0 8px 15px;
+  }
+
+  .admin-brand > span {
+    font-size: 26px;
+  }
+
+  .admin-brand strong {
+    font-size: 18px;
+  }
+
+  .admin-menu-title,
+  .admin-sidebar-bottom {
+    display: none;
+  }
+
+  .admin-menu-item {
+    display: inline-flex;
+    width: auto;
+    margin: 3px;
+    padding: 10px 11px;
+    font-size: 12px;
+  }
+
+  .admin-menu-item span {
+    width: 17px;
+    font-size: 15px;
+  }
+
+  .admin-main {
+    min-height: auto;
+    padding: 18px 12px 28px;
+  }
+
+  .admin-content-grid {
+    width: 100%;
+  }
+
+  .admin-panel {
+    padding: 19px 16px;
+    border-radius: 12px;
+  }
+
+  .admin-panel-heading {
+    gap: 10px;
+    margin-bottom: 23px;
+    padding-bottom: 18px;
+  }
+
+  .admin-eyebrow {
+    font-size: 10px;
+  }
+
+  .admin-panel h2,
+  .admin-crawler-panel .admin-panel-heading h2 {
+    font-size: 21px;
+    letter-spacing: -0.2px;
+  }
+
+  .admin-panel-heading p {
+    font-size: 13px;
+  }
+
+  .admin-heading-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 19px;
+  }
+
+  .admin-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .admin-field.full-width {
+    grid-column: auto;
+  }
+
+  .admin-field label {
+    font-size: 13px;
+  }
+
+  .admin-field input,
+  .admin-field select {
+    min-height: 45px;
+    font-size: 14px;
+  }
+
+  .admin-field small {
+    font-size: 11px;
+  }
+
+  .admin-submit-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+    padding-top: 19px;
+  }
+
+  .admin-submit-row p {
+    font-size: 12px;
+  }
+
+  .admin-submit-button {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .admin-alert {
+    padding: 14px;
+  }
+
+  .admin-alert pre {
+    font-size: 11px;
+  }
+}
+
+/* =========================================
+   RESPONSIVE - MÀN HÌNH RẤT NHỎ
+========================================= */
+
+@media (max-width: 380px) {
+  .admin-main {
+    padding: 12px 8px 22px;
+  }
+
+  .admin-panel {
+    padding: 16px 12px;
+  }
+
+  .admin-panel-heading {
+    align-items: flex-start;
+  }
+
+  .admin-panel h2,
+  .admin-crawler-panel .admin-panel-heading h2 {
+    font-size: 19px;
+  }
+
+  .admin-heading-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .admin-menu-item {
+    padding: 8px;
+    font-size: 11px;
+  }
+}

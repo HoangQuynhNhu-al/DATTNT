@@ -1,0 +1,255 @@
+
+/* ================================
+   PRODUCT CARD - GIFTY
+================================ */
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #fffdf9;
+  border: 1px solid #eee4d9;
+  border-radius: 10px;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  border-color: #e6c5b3;
+  box-shadow: 0 12px 28px rgba(90, 59, 42, 0.09);
+}
+
+/* ================================
+   PRODUCT IMAGE
+================================ */
+
+.product-image-link {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: #f7f1e9;
+  text-decoration: none;
+}
+
+.product-image {
+  display: block;
+  width: 100%;
+  height: 225px;
+  object-fit: contain;
+  padding: 14px;
+  transition: transform 0.35s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.04);
+}
+
+/* ================================
+   GIFTY PICK LABEL
+================================ */
+
+.product-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 6px 10px;
+  color: #a65336;
+  background: #fff7ef;
+  border: 1px solid #f0dfd1;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* ================================
+   PRODUCT INFORMATION
+================================ */
+
+.product-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 16px;
+}
+
+.product-category {
+  margin: 0 0 8px;
+  color: #b66b4c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.product-name {
+  display: -webkit-box;
+  min-height: 44px;
+  margin: 0 0 12px;
+  overflow: hidden;
+  color: #35271f;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* ================================
+   PRODUCT PRICE
+================================ */
+
+.product-price {
+  margin: 0 0 4px;
+  color: #c45f3d;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.product-price-note {
+  margin: 0 0 16px;
+  color: #998b80;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ================================
+   VIEW PRODUCT BUTTON
+================================ */
+
+.product-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: auto;
+  padding: 11px 36px;
+  border: 1px solid #d66e4a;
+  border-radius: 6px;
+  color: #fff;
+  background: #d66e4a;
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.product-button:hover {
+  border-color: #bd5838;
+  color: #fff;
+  background: #bd5838;
+  box-shadow: 0 5px 12px rgba(190, 91, 55, 0.15);
+}
+
+.product-button:focus-visible {
+  outline: 3px solid rgba(214, 110, 74, 0.35);
+  outline-offset: 3px;
+}
+
+/* Luôn giữ mũi tên bên phải,
+   không làm lệch chữ khỏi chính giữa */
+
+.product-button-arrow {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  font-size: 19px;
+  line-height: 1;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+}
+
+.product-button:hover .product-button-arrow {
+  transform: translate(2px, calc(-50% - 2px));
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 768px) {
+  .product-image {
+    height: 190px;
+    padding: 10px;
+  }
+
+  .product-info {
+    padding: 12px;
+  }
+
+  .product-name {
+    font-size: 14px;
+    min-height: 42px;
+  }
+
+  .product-price {
+    font-size: 17px;
+  }
+
+  .product-button {
+    min-height: 44px;
+    padding: 10px 32px;
+    font-size: 13px;
+  }
+
+  .product-button-arrow {
+    right: 10px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-image {
+    height: 160px;
+  }
+
+  .product-info {
+    padding: 10px;
+  }
+
+  .product-label {
+    top: 8px;
+    left: 8px;
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .product-name {
+    font-size: 13px;
+  }
+
+  .product-price {
+    font-size: 16px;
+  }
+
+  .product-button {
+    min-height: 42px;
+    padding: 9px 28px;
+    font-size: 12px;
+  }
+
+  .product-button-arrow {
+    right: 8px;
+    font-size: 16px;
+  }
+}

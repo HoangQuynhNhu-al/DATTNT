@@ -1,0 +1,389 @@
+
+/* =========================================
+   GIFTY - HEADER
+   Theme: Peach / Terracotta / Warm Brown
+========================================= */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fffaf6;
+  border-bottom: 1px solid #f0dfd3;
+  box-shadow: 0 3px 14px rgba(90, 52, 32, 0.06);
+}
+
+/* =========================================
+   HEADER CONTAINER
+========================================= */
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  width: 100%;
+  max-width: 1500px;
+  min-height: 84px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* =========================================
+   LOGO
+========================================= */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: #bd5635;
+  font-size: 30px;
+  font-weight: 850;
+  letter-spacing: -0.7px;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.logo:hover {
+  color: #963b22;
+}
+
+/* =========================================
+   MAIN NAVIGATION
+========================================= */
+
+.menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 38px;
+}
+
+.menu a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 0;
+  color: #5b4638;
+  font-size: 16px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+/* Gạch chân khi đang chọn */
+.menu a::after {
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  left: 0;
+  height: 3px;
+  border-radius: 5px;
+  background: #c95d39;
+  content: "";
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.menu a:hover,
+.menu a.active {
+  color: #bd5635;
+}
+
+.menu a:hover::after,
+.menu a.active::after {
+  transform: scaleX(1);
+}
+
+/* =========================================
+   USER / ADMIN ACTIONS
+========================================= */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.role-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 88px;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border: 1px solid #e8b49a;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.role-link span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+/* Nút User */
+.user-link {
+  border-color: #e8b49a;
+  background: #fff0e6;
+  color: #a94729;
+}
+
+.user-link:hover {
+  border-color: #c95d39;
+  background: #ffeadc;
+  color: #963b22;
+}
+
+/* User đang được chọn */
+.user-link.active {
+  border-color: #c95d39;
+  background: #ffeadc;
+  color: #a94729;
+  box-shadow: 0 2px 7px rgba(169, 71, 41, 0.08);
+}
+
+/* Nút Admin */
+.admin-link {
+  border-color: #d36b45;
+  background: #d36b45;
+  color: #fffaf5;
+}
+
+.admin-link:hover {
+  border-color: #a94729;
+  background: #b95030;
+  color: #fffaf5;
+}
+
+/* Admin đang được chọn */
+.admin-link.active {
+  border-color: #a94729;
+  background: #a94729;
+  color: #fffaf5;
+  box-shadow: 0 3px 9px rgba(169, 71, 41, 0.16);
+}
+
+/* Hiệu ứng nút */
+.role-link:hover {
+  transform: translateY(-1px);
+}
+
+.role-link:active {
+  transform: translateY(0);
+}
+
+.role-link:focus-visible,
+.menu a:focus-visible,
+.logo:focus-visible {
+  outline: 3px solid rgba(201, 93, 57, 0.3);
+  outline-offset: 4px;
+}
+
+/* =========================================
+   LARGE SCREEN
+========================================= */
+
+@media (min-width: 1500px) {
+  .header-container {
+    padding-right: 40px;
+    padding-left: 40px;
+  }
+
+  .menu {
+    gap: 44px;
+  }
+
+  .menu a {
+    font-size: 17px;
+  }
+
+  .role-link {
+    min-height: 44px;
+    padding: 11px 18px;
+    font-size: 15px;
+  }
+}
+
+/* =========================================
+   LAPTOP / TABLET LANDSCAPE
+========================================= */
+
+@media (max-width: 1100px) {
+  .header-container {
+    gap: 20px;
+    min-height: 76px;
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+
+  .logo {
+    font-size: 27px;
+  }
+
+  .menu {
+    gap: 24px;
+  }
+
+  .menu a {
+    font-size: 15px;
+  }
+
+  .header-actions {
+    gap: 7px;
+  }
+
+  .role-link {
+    min-width: 78px;
+    min-height: 40px;
+    gap: 6px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+}
+
+/* =========================================
+   TABLET PORTRAIT
+========================================= */
+
+@media (max-width: 850px) {
+  .header-container {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 18px;
+    padding-top: 13px;
+    padding-bottom: 10px;
+  }
+
+  .logo {
+    font-size: 26px;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
+
+  .menu {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 36px;
+    border-top: 1px solid #f2e5dc;
+    padding-top: 5px;
+  }
+
+  .menu a {
+    min-height: 36px;
+    font-size: 15px;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .header-container {
+    gap: 12px;
+    padding: 13px 15px 9px;
+  }
+
+  .logo {
+    gap: 5px;
+    font-size: 24px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .role-link {
+    min-width: auto;
+    min-height: 36px;
+    gap: 5px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .role-link span {
+    font-size: 14px;
+  }
+
+  .menu {
+    gap: 28px;
+    padding-top: 6px;
+  }
+
+  .menu a {
+    min-height: 34px;
+    font-size: 14px;
+  }
+
+  .menu a::after {
+    height: 2px;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 380px) {
+  .header-container {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .logo {
+    font-size: 21px;
+  }
+
+  .header-actions {
+    gap: 5px;
+  }
+
+  .role-link {
+    gap: 4px;
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+
+  .role-link span {
+    font-size: 12px;
+  }
+
+  .menu {
+    gap: 22px;
+  }
+
+  .menu a {
+    font-size: 13px;
+  }
+}
