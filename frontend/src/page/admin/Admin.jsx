@@ -152,9 +152,9 @@ function Admin() {
                     required
                   >
                     <option value="ebay">eBay</option>
-                    <option value="shopee">
+                    {/* <option value="shopee">
                       Shopee Việt Nam
-                    </option>
+                    </option> */}
                   </select>
                 </div>
 

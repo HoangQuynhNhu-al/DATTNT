@@ -16,10 +16,9 @@ function formatPrice(price, source) {
     return String(price);
   }
 
-  // Sản phẩm Shopee dùng giá VND.
-  // eBay có thể dùng USD nếu dữ liệu crawler lưu theo USD.
+  // Shopee sử dụng VND, eBay sử dụng USD.
   const currency =
-    String(source || "").toLowerCase() === "shopee"
+    String(source || "").toLowerCase().includes("shopee")
       ? "VND"
       : "USD";
 
@@ -36,6 +35,7 @@ function getSource(product) {
   ).toLowerCase();
 
   if (source.includes("shopee")) return "Shopee";
+
   if (source.includes("ebay") || source.includes("e-bay")) {
     return "eBay";
   }
@@ -46,10 +46,10 @@ function getSource(product) {
 function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [keyword, setKeyword] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Lấy danh sách sản phẩm từ Backend.
   const loadProducts = async () => {
     setLoading(true);
     setError("");
@@ -64,7 +64,6 @@ function AdminProducts() {
         );
       }
 
-      // Hỗ trợ API trả về mảng hoặc object chứa products.
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data.products)
@@ -86,6 +85,7 @@ function AdminProducts() {
     loadProducts();
   }, []);
 
+  // Tìm kiếm theo tên, danh mục, shop và nguồn sản phẩm.
   const filteredProducts = products.filter((product) => {
     const source = getSource(product);
 
@@ -102,21 +102,10 @@ function AdminProducts() {
       .join(" ")
       .toLowerCase();
 
-    const matchesKeyword = text.includes(
-      keyword.trim().toLowerCase()
-    );
-
-    const matchesSource =
-      sourceFilter === "all" ||
-      source.toLowerCase() === sourceFilter;
-
-    return matchesKeyword && matchesSource;
+    return text.includes(keyword.trim().toLowerCase());
   });
 
-  const shopeeCount = products.filter(
-    (product) => getSource(product).toLowerCase() === "shopee"
-  ).length;
-
+  // Thống kê số lượng sản phẩm.
   const ebayCount = products.filter(
     (product) => getSource(product).toLowerCase() === "ebay"
   ).length;
@@ -146,6 +135,7 @@ function AdminProducts() {
         </button>
       </header>
 
+      {/* Thống kê sản phẩm */}
       <section className="admin-products-summary">
         <div>
           <span>Tổng sản phẩm từ API</span>
@@ -158,17 +148,14 @@ function AdminProducts() {
         </div>
 
         <div>
-          <span>Sản phẩm Shopee</span>
-          <strong>{shopeeCount}</strong>
-        </div>
-
-        <div>
           <span>Kết quả hiện tại</span>
           <strong>{filteredProducts.length}</strong>
         </div>
       </section>
 
       <section className="admin-products-content">
+
+        {/* Chỉ giữ lại ô tìm kiếm, bỏ select và mũi tên lọc */}
         <div className="admin-products-toolbar">
           <input
             type="text"
@@ -176,42 +163,37 @@ function AdminProducts() {
             onChange={(event) => setKeyword(event.target.value)}
             placeholder="Tìm tên sản phẩm, danh mục, tên shop..."
           />
-
-          <select
-            value={sourceFilter}
-            onChange={(event) => setSourceFilter(event.target.value)}
-            aria-label="Lọc theo nguồn sản phẩm"
-          >
-            <option value="all">Tất cả nguồn</option>
-            <option value="ebay">eBay</option>
-            <option value="shopee">Shopee</option>
-          </select>
         </div>
 
+        {/* Trạng thái tải dữ liệu */}
         {loading && (
           <div className="admin-products-message">
             Đang tải dữ liệu sản phẩm...
           </div>
         )}
 
+        {/* Thông báo lỗi */}
         {!loading && error && (
           <div className="admin-products-error">
             <strong>Không tải được dữ liệu</strong>
             <p>{error}</p>
+
             <button type="button" onClick={loadProducts}>
               Thử lại
             </button>
           </div>
         )}
 
+        {/* Không có sản phẩm */}
         {!loading && !error && filteredProducts.length === 0 && (
           <div className="admin-products-message">
             {products.length === 0
               ? "API chưa trả về sản phẩm nào."
-              : "Không tìm thấy sản phẩm phù hợp với bộ lọc."}
+              : "Không tìm thấy sản phẩm phù hợp với từ khóa."}
           </div>
         )}
 
+        {/* Bảng danh sách sản phẩm */}
         {!loading && !error && filteredProducts.length > 0 && (
           <div className="admin-products-table-wrap">
             <table className="admin-products-table">
@@ -295,7 +277,9 @@ function AdminProducts() {
                         {product.category || "Chưa phân loại"}
                       </td>
 
-                      <td>{formatPrice(product.price, source)}</td>
+                      <td>
+                        {formatPrice(product.price, source)}
+                      </td>
 
                       <td>
                         <span
