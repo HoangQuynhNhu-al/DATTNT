@@ -552,21 +552,85 @@
   line-height: 1.7;
 }
 
+/* Thanh nhập nhu cầu - toàn bộ khu vực có thể nhấp */
 .ask-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+
+  width: 100%;
   min-height: 52px;
   padding: 6px 7px 6px 15px;
+
   border: 1px solid #e9dcd1;
   border-radius: 8px;
+
+  color: inherit;
   background: #fffaf5;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
+/* Hiệu ứng khi di chuột */
+.ask-bottom:hover {
+  border-color: #e4a184;
+  background: #fff7f0;
+  box-shadow: 0 3px 12px rgba(190, 91, 55, 0.08);
+}
+
+/* Hiệu ứng khi nhấn */
+.ask-bottom:active {
+  background: #fff0e6;
+  transform: scale(0.998);
+}
+
+/* Hiển thị khi dùng bàn phím */
+.ask-bottom:focus-visible {
+  outline: 2px solid #d9714d;
+  outline-offset: 3px;
+}
+
+/* Nội dung placeholder */
 .ask-placeholder {
   color: #b09d91;
   font-size: 12px;
+  pointer-events: none;
+}
+
+/* Nút hiển thị bên phải */
+.ask-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  min-height: 38px;
+  padding: 0 15px;
+
+  border: 0;
+  border-radius: 6px;
+
+  color: white;
+  background: #d9714d;
+
+  font-size: 11px;
+  font-weight: 750;
+
+  pointer-events: none;
+  transition: background 0.2s ease;
+}
+
+.ask-button span {
+  font-size: 16px;
 }
 
 .ask-button {

@@ -5,12 +5,54 @@ const cors = require("cors");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
 const path = require("path");
+const multer = require("multer");
+const fs = require("fs");
 require("dotenv").config();
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
+// =========================
+// CẤU HÌNH UPLOAD ẢNH
+// =========================
+
+const uploadDir = path.join(__dirname, "uploads");
+
+// Tạo thư mục uploads nếu chưa tồn tại
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+
+    filename: (req, file, cb) => {
+        const extension = path.extname(file.originalname).toLowerCase();
+        const filename = `${crypto.randomUUID()}${extension}`;
+
+        cb(null, filename);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith("image/")) {
+            return cb(new Error("Chỉ chấp nhận file hình ảnh!"));
+        }
+
+        cb(null, true);
+    }
+});
 const USD_TO_VND = 26000;
 
 const pool = mysql.createPool({
@@ -933,6 +975,8 @@ app.post("/api/admin/crawl", (req, res) => {
     // 12. Xử lý lỗi khởi chạy Python
     child.on("error", (error) => {
         clearTimeout(timeout);
+        
+        
 
         if (responded) return;
         responded = true;
@@ -950,6 +994,8 @@ app.post("/api/admin/crawl", (req, res) => {
     // 13. Xử lý kết quả sau khi Python kết thúc
     child.on("close", (code) => {
         clearTimeout(timeout);
+        cleanupImage();
+
 
         if (responded) return;
         responded = true;
@@ -1072,6 +1118,835 @@ app.post("/api/ebay/account-deletion", (req, res) => {
 // =========================
 // Khởi động server
 // =========================
+// ======================================
+// API TÌM KIẾM SẢN PHẨM BẰNG HÌNH ẢNH
+// ======================================
+
+
+app.post(
+    "/api/image-search",
+    upload.single("image"),
+    async (req, res) => {
+
+        let imagePath = null;
+        let responded = false;
+        let timeout = null;
+
+        const cleanupImage = () => {
+    if (!imagePath) return;
+
+    const fileToDelete = imagePath;
+    imagePath = null;
+
+    fs.unlink(fileToDelete, error => {
+        if (error && error.code !== "ENOENT") {
+            console.error("Không xóa được ảnh tạm:", error);
+        }
+    });
+};
+        try {
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Bạn chưa tải ảnh lên."
+                });
+            }
+
+            imagePath = req.file.path;
+
+            const message = req.body.message || "";
+
+            console.log("Đã nhận ảnh:", req.file.filename);
+            console.log("Mô tả:", message);
+
+            // Đường dẫn Python trong môi trường ảo image_ai
+            const imageAiDir = path.join(__dirname, "..", "image_ai");
+
+            const pythonCommand = path.join(
+                imageAiDir,
+                ".venv",
+                "Scripts",
+                "python.exe"
+            );
+
+            const pythonScript = path.join(
+                imageAiDir,
+                "search_image.py"
+            );
+
+            // Gọi Python, truyền đường dẫn ảnh và số kết quả
+            const child = spawn(
+                pythonCommand,
+                [pythonScript, imagePath, "5"],
+                {
+                    cwd: imageAiDir,
+                    windowsHide: true,
+                    env: {
+                        ...process.env,
+                        PYTHONUTF8: "1",
+                        PYTHONIOENCODING: "utf-8"
+                    }
+                }
+            );
+
+            let stdout = "";
+            let stderr = "";
+
+            // Giới hạn thời gian xử lý 3 phút
+            timeout = setTimeout(() => {
+                if (responded) return;
+
+                responded = true;
+                child.kill();
+
+                return res.status(504).json({
+                    success: false,
+                    message: "AI xử lý ảnh quá lâu."
+                });
+            }, 3 * 60 * 1000);
+
+            child.stdout.on("data", (data) => {
+                stdout += data.toString();
+
+                if (stdout.length > 2 * 1024 * 1024) {
+                    child.kill();
+                }
+            });
+
+            child.stderr.on("data", (data) => {
+                stderr += data.toString();
+            });
+
+            child.on("error", (error) => {
+                clearTimeout(timeout);
+                cleanupImage();
+
+                if (responded) return;
+                responded = true;
+
+                console.error("Không chạy được Python:", error);
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Không thể khởi chạy AI Python.",
+                    error: error.message
+                });
+            });
+
+            child.on("close", async (code) => {
+                clearTimeout(timeout);
+                cleanupImage();
+                // Xóa ảnh tạm sau khi xử lý
+
+                if (responded) return;
+                responded = true;
+
+                if (code !== 0) {
+                    console.error("Python AI lỗi:", stderr);
+                    console.error("Python output:", stdout);
+
+                    return res.status(500).json({
+                        success: false,
+                        message: "AI không thể tìm kiếm sản phẩm.",
+                        error: (stderr || stdout).slice(-3000)
+                    });
+                }
+
+                try {
+                    // Lấy dòng JSON cuối cùng từ Python
+                    const lines = stdout
+                        .split(/\r?\n/)
+                        .map(line => line.trim())
+                        .filter(Boolean);
+
+                    const jsonLine = [...lines]
+                        .reverse()
+                        .find(line =>
+                            line.startsWith("[") ||
+                            line.startsWith("{")
+                        );
+
+                    if (!jsonLine) {
+                        throw new Error(
+                            "Python không trả về dữ liệu JSON."
+                        );
+                    }
+
+                    const aiResults = JSON.parse(jsonLine);
+
+                    if (!Array.isArray(aiResults)) {
+                        throw new Error(
+                            aiResults.message ||
+                            "Kết quả AI không hợp lệ."
+                        );
+                    }
+
+                    if (aiResults.length === 0) {
+                        return res.json({
+                            success: true,
+                            message: "Không tìm thấy sản phẩm tương tự.",
+                            count: 0,
+                            products: []
+                        });
+                    }
+
+                    // Lấy ID sản phẩm từ kết quả AI
+                    const productIds = aiResults.map(
+                        item => Number(item.product_id)
+                    ).filter(id => Number.isInteger(id) && id > 0);
+
+                    if (productIds.length === 0) {
+                        return res.json({
+                            success: true,
+                            message: "Không tìm thấy sản phẩm hợp lệ.",
+                            count: 0,
+                            products: []
+                        });
+                    }
+
+                    // Truy vấn thông tin sản phẩm từ MySQL
+                    const placeholders = productIds
+                        .map(() => "?")
+                        .join(",");
+
+                    const [products] = await pool.query(
+                        `
+                        SELECT *
+                        FROM products
+                        WHERE id IN (${placeholders})
+                          AND is_active = 1
+                        `,
+                        productIds
+                    );
+
+                    // Giữ thứ tự xếp hạng của FAISS
+                    const productMap = new Map(
+                        products.map(product => [
+                            Number(product.id),
+                            product
+                        ])
+                    );
+
+                    const recommendations = aiResults
+                        .map(result => {
+                            const product = productMap.get(
+                                Number(result.product_id)
+                            );
+
+                            if (!product) return null;
+
+                            return {
+                                ...product,
+                                similarity: result.similarity
+                            };
+                        })
+                        .filter(Boolean);
+
+                    console.log(
+                        "Số sản phẩm tìm được:",
+                        recommendations.length
+                    );
+
+                    return res.json({
+                        success: true,
+                        message: "Tìm kiếm bằng hình ảnh thành công.",
+                        count: recommendations.length,
+                        products: recommendations
+                    });
+
+                } catch (error) {
+                    console.error(
+                        "Lỗi đọc kết quả AI:",
+                        error
+                    );
+
+                    return res.status(500).json({
+                        success: false,
+                        message: "Không thể xử lý kết quả tìm kiếm."
+                    });
+                }
+            });
+
+        } catch (error) {
+            if (timeout) clearTimeout(timeout);
+            cleanupImage();
+
+            if (responded) return;
+            responded = true;
+
+            console.error("Lỗi image-search:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Không thể tìm kiếm bằng hình ảnh."
+            });
+
+        } 
+        // finally {
+        //     // Xóa ảnh tạm sau khi xử lý
+        //     // Nếu Python vẫn chạy, file sẽ được xóa khi request kết thúc
+        //     if (imagePath && fs.existsSync(imagePath)) {
+        //         fs.unlink(imagePath, error => {
+        //             if (error) {
+        //                 console.error(
+        //                     "Không xóa được ảnh tạm:",
+        //                     error
+        //                 );
+        //             }
+        //         });
+        //     }
+        // }
+    }
+);
+
+// =====================================================
+
+// =====================================================
+// GIFTY - GEMINI CHAT ASSISTANT
+// Kết hợp xử lý nhanh bằng JavaScript và Gemini AI
+// Không ảnh hưởng /api/recommend và /api/image-search
+// =====================================================
+// =====================================================
+// GEMINI RETRY - TỰ ĐỘNG THỬ LẠI KHI API QUÁ TẢI
+// =====================================================
+
+const sleep = (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+async function generateGeminiWithRetry(generateFn, maxRetries = 3) {
+    let lastError;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await generateFn();
+        } catch (error) {
+            lastError = error;
+
+            const status = Number(error.status || error.code);
+            const message = String(error.message || "").toLowerCase();
+
+            const shouldRetry =
+                status === 429 ||
+                status === 503 ||
+                status >= 500 ||
+                message.includes("unavailable") ||
+                message.includes("high demand") ||
+                message.includes("overloaded");
+
+            if (!shouldRetry || attempt === maxRetries) {
+                throw error;
+            }
+
+            const delay = 2000 * Math.pow(2, attempt);
+
+            console.log(
+                `[GEMINI RETRY] Lần thử ${attempt + 1}/${maxRetries}, chờ ${delay / 1000}s...`
+            );
+
+            await sleep(delay);
+        }
+    }
+
+    throw lastError;
+}
+// Chuẩn hóa tiếng Việt
+function normalizeGiftText(value) {
+    return String(value ?? "")
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d")
+        .replace(/\s+/g, " ");
+}
+
+// Kiểm tra cụm từ độc lập
+function hasGiftPhrase(text, phrases) {
+    return phrases.some(phrase => {
+        const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return new RegExp(`(^|\\s)${escaped}(?=\\s|$)`, "i").test(text);
+    });
+}
+
+// Nhận diện câu trả lời đơn giản.
+// Trả về null nếu không đủ chắc chắn để xử lý nhanh.
+function detectFastGiftAnswer(message, currentSlots = {}) {
+    const text = normalizeGiftText(message);
+
+    // Chỉ xử lý nhanh câu ngắn, rõ ràng
+    if (!text || text.length > 50) return null;
+
+    // 1. Người nhận
+    const relationshipMap = [
+        {
+            value: "mom",
+            words: ["me", "me minh", "me toi", "tang me", "cho me"]
+        },
+        {
+            value: "dad",
+            words: ["bo", "bo minh", "bo toi", "tang bo", "cho bo", "cha"]
+        },
+        {
+            value: "lover",
+            words: [
+                "ban gai", "ban trai", "nguoi yeu",
+                "vo", "chong", "crush"
+            ]
+        },
+        {
+            value: "friend",
+            words: [
+                "ban", "ban than", "ban be",
+                "dong nghiep", "ban hoc"
+            ]
+        },
+        {
+            value: "other",
+            words: [
+                "anh trai", "chi gai", "em gai",
+                "em trai", "nguoi than"
+            ]
+        }
+    ];
+
+    for (const item of relationshipMap) {
+        if (item.words.includes(text)) {
+            return {
+                type: "relationship",
+                value: item.value
+            };
+        }
+    }
+
+    // 2. Dịp tặng quà
+    const occasionMap = [
+        {
+            value: "birthday",
+            words: ["sinh nhat", "birthday"]
+        },
+        {
+            value: "christmas",
+            words: ["giang sinh", "noel", "christmas"]
+        },
+        {
+            value: "valentine",
+            words: ["valentine", "14/2"]
+        },
+        {
+            value: "anniversary",
+            words: ["ky niem", "anniversary"]
+        },
+        {
+            value: "mothers_day",
+            words: ["ngay cua me", "ngay cua me", "ngay cua me"]
+        },
+        {
+            value: "fathers_day",
+            words: ["ngay cua cha", "ngay cua bo"]
+        },
+        {
+            value: "other",
+            words: ["tet", "nam moi", "20/10", "8/3"]
+        }
+    ];
+
+    for (const item of occasionMap) {
+        if (item.words.includes(text)) {
+            return {
+                type: "occasion",
+                value: item.value
+            };
+        }
+    }
+
+    // 3. Giới tính
+    if (["nu", "nu gioi", "female", "con gai"].includes(text)) {
+        return {
+            type: "gender",
+            value: "female"
+        };
+    }
+
+    if (["nam", "nam gioi", "male", "con trai"].includes(text)) {
+        return {
+            type: "gender",
+            value: "male"
+        };
+    }
+
+    if (text === "unisex") {
+        return {
+            type: "gender",
+            value: "unisex"
+        };
+    }
+
+    // 4. Sở thích / loại quà
+    const interestMap = [
+        { value: "cosmetics", words: ["my pham", "trang diem", "makeup", "son"] },
+        { value: "perfume", words: ["nuoc hoa", "perfume"] },
+        { value: "bag", words: ["tui xach", "tui", "balo", "ba lo"] },
+        { value: "watch", words: ["dong ho", "watch"] },
+        { value: "jewelry", words: ["trang suc", "day chuyen", "vong tay", "bong tai"] },
+        { value: "clothing", words: ["quan ao", "thoi trang", "ao", "vay", "dam"] },
+        { value: "shoes", words: ["giay", "sneaker"] },
+        { value: "book", words: ["sach", "book"] },
+        { value: "toy", words: ["do choi", "gau bong", "thu bong"] },
+        { value: "wallet", words: ["vi", "bop"] },
+        { value: "sunglasses", words: ["kinh ram", "kinh mat"] },
+        { value: "keychain", words: ["moc khoa"] },
+        { value: "mug", words: ["coc", "ly"] }
+    ];
+
+    for (const item of interestMap) {
+        if (item.words.includes(text)) {
+            return {
+                type: "interests",
+                value: [item.value]
+            };
+        }
+    }
+
+    // 5. Ngân sách
+    const moneyMatch = text.match(
+        /^(\d+(?:[.,]\d+)?)\s*(trieu|tr|k|nghin|ngan|vnd|dong)$/
+    );
+
+    if (moneyMatch) {
+        let amount = Number(moneyMatch[1].replace(",", "."));
+        const unit = moneyMatch[2];
+
+        if (unit === "trieu" || unit === "tr") {
+            amount *= 1000000;
+        } else if (unit === "k" || unit === "nghin" || unit === "ngan") {
+            amount *= 1000;
+        }
+
+        if (Number.isFinite(amount) && amount > 0) {
+            return {
+                type: "budget",
+                value: Math.round(amount)
+            };
+        }
+    }
+
+    // 6. Độ tuổi
+    const ageMatch = text.match(/^(\d{1,2})\s*(tuoi)?$/);
+
+    if (ageMatch && ageMatch[2]) {
+        const age = Number(ageMatch[1]);
+
+        if (age >= 1 && age <= 100) {
+            let ageGroup;
+
+            if (age < 18) ageGroup = "under18";
+            else if (age <= 25) ageGroup = "18-25";
+            else if (age <= 35) ageGroup = "26-35";
+            else if (age <= 50) ageGroup = "36-50";
+            else ageGroup = "over50";
+
+            return {
+                type: "age",
+                value: ageGroup
+            };
+        }
+    }
+
+    return null;
+}
+
+// Cập nhật slots từ câu trả lời nhanh
+function mergeFastGiftSlots(currentSlots, detected) {
+    const slots = {
+        relationship: currentSlots.relationship ?? null,
+        occasion: currentSlots.occasion ?? null,
+        gender: currentSlots.gender ?? null,
+        age: currentSlots.age ?? null,
+        interests: Array.isArray(currentSlots.interests)
+            ? [...currentSlots.interests]
+            : [],
+        budget: currentSlots.budget ?? null,
+        colors: Array.isArray(currentSlots.colors)
+            ? [...currentSlots.colors]
+            : [],
+        categories: Array.isArray(currentSlots.categories)
+            ? [...currentSlots.categories]
+            : []
+    };
+
+    if (detected.type === "interests") {
+        slots.interests = detected.value;
+        slots.categories = detected.value;
+    } else {
+        slots[detected.type] = detected.value;
+    }
+
+    return slots;
+}
+
+// Xác định thông tin còn thiếu
+function getGiftMissingFields(slots) {
+    const missing = [];
+
+    if (!slots.relationship) missing.push("relationship");
+    if (!slots.occasion) missing.push("occasion");
+
+    if (!Array.isArray(slots.interests) || slots.interests.length === 0) {
+        missing.push("interests");
+    }
+
+    if (!Number.isFinite(Number(slots.budget)) || Number(slots.budget) <= 0) {
+        missing.push("budget");
+    }
+
+    return missing;
+}
+
+// Tạo câu hỏi tiếp theo
+function getGiftNextQuestion(missingFields) {
+    if (missingFields.includes("relationship")) {
+        return "Bạn muốn tặng quà cho ai vậy? 😊";
+    }
+
+    if (missingFields.includes("occasion")) {
+        return "Bạn muốn tặng quà vào dịp nào vậy? 🎁";
+    }
+
+    if (missingFields.includes("interests")) {
+        return "Người ấy thích loại quà nào? Ví dụ như mỹ phẩm, túi xách, nước hoa hoặc đồng hồ nhé.";
+    }
+
+    if (missingFields.includes("budget")) {
+        return "Bạn dự định chi khoảng bao nhiêu tiền cho món quà? Ví dụ 300k hoặc 500k nhé.";
+    }
+
+    return "Mình đã có đủ thông tin rồi. Để mình tìm quà phù hợp cho bạn nhé! 🎁";
+}
+
+
+// =====================================================
+// API CHAT ASSISTANT
+// =====================================================
+
+app.post("/api/chat-assistant", async (req, res) => {
+    const startTime = Date.now();
+
+    try {
+
+        const {
+            message,
+            history = [],
+            currentSlots = {}
+        } = req.body || {};
+
+        if (!message || typeof message !== "string" || !message.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Vui lòng nhập nội dung tin nhắn."
+            });
+        }
+
+        // Giới hạn lịch sử
+        const safeHistory = Array.isArray(history)
+            ? history.slice(-8).map(item => ({
+                role: item.role === "assistant" ? "assistant" : "user",
+                text: String(item.text || "").slice(0, 1000)
+            }))
+            : [];
+
+        // =================================================
+        // 1. ƯU TIÊN XỬ LÝ NHANH BẰNG JAVASCRIPT
+        // =================================================
+
+        const detected = detectFastGiftAnswer(message, currentSlots);
+
+        if (detected) {
+            const slots = mergeFastGiftSlots(currentSlots, detected);
+            const missingFields = getGiftMissingFields(slots);
+            const readyForRecommendation = missingFields.length === 0;
+
+            const reply = getGiftNextQuestion(missingFields);
+
+            console.log(
+                `[GIFTY FAST] ${detected.type} | ${Date.now() - startTime}ms`
+            );
+
+            return res.json({
+                success: true,
+                reply,
+                slots,
+                missingFields,
+                readyForRecommendation,
+                processingMode: "fast"
+            });
+        }
+        // Chỉ kiểm tra API Key khi cần gọi Gemini
+        if (!process.env.GEMINI_API_KEY) {
+            return res.status(500).json({
+                success: false,
+                message: "Chưa cấu hình GEMINI_API_KEY trong file .env."
+            });
+        }
+
+        // =================================================
+        // 2. KHÔNG NHẬN DIỆN ĐƯỢC -> GỌI GEMINI
+        // =================================================
+
+        const ai = new GoogleGenAI({
+            apiKey: process.env.GEMINI_API_KEY
+        });
+
+        const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+
+        const responseJsonSchema = {
+            type: "object",
+            properties: {
+                reply: { type: "string" },
+                slots: {
+                    type: "object",
+                    properties: {
+                        relationship: {
+                            anyOf: [{ type: "string" }, { type: "null" }]
+                        },
+                        occasion: {
+                            anyOf: [{ type: "string" }, { type: "null" }]
+                        },
+                        gender: {
+                            anyOf: [{ type: "string" }, { type: "null" }]
+                        },
+                        age: {
+                            anyOf: [{ type: "string" }, { type: "null" }]
+                        },
+                        interests: {
+                            type: "array",
+                            items: { type: "string" }
+                        },
+                        budget: {
+                            anyOf: [{ type: "number" }, { type: "null" }]
+                        },
+                        colors: {
+                            type: "array",
+                            items: { type: "string" }
+                        },
+                        categories: {
+                            type: "array",
+                            items: { type: "string" }
+                        }
+                    },
+                    required: [
+                        "relationship",
+                        "occasion",
+                        "gender",
+                        "age",
+                        "interests",
+                        "budget",
+                        "colors",
+                        "categories"
+                    ],
+                    additionalProperties: false
+                }
+            },
+            required: ["reply", "slots"],
+            additionalProperties: false
+        };
+
+        const systemInstruction = `
+Bạn là trợ lý tư vấn quà tặng của website GIFTY.
+
+NHIỆM VỤ:
+- Trò chuyện tự nhiên bằng tiếng Việt.
+- Hiểu ý định người dùng dù họ diễn đạt tự do.
+- Trích xuất thông tin từ toàn bộ hội thoại.
+- Kết hợp thông tin mới với thông tin đã biết.
+- Không hỏi lại thông tin đã cung cấp.
+- Không tự bịa thông tin.
+- Nếu người dùng sửa yêu cầu, cập nhật thông tin mới.
+- Nếu chưa đủ thông tin, hỏi ngắn gọn về phần còn thiếu.
+- Không tự tạo tên, giá hoặc đường link sản phẩm.
+- Việc tìm sản phẩm do hệ thống GIFTY thực hiện.
+
+CÁC TRƯỜNG:
+1. relationship: người nhận quà.
+2. occasion: dịp tặng quà.
+3. gender: giới tính nếu được cung cấp.
+4. age: độ tuổi nếu được cung cấp.
+5. interests: danh sách sở thích.
+6. budget: ngân sách bằng VND.
+7. colors: màu sắc mong muốn.
+8. categories: loại sản phẩm.
+
+QUY TẮC:
+- Giữ nguyên thông tin đã biết nếu người dùng không thay đổi.
+- Trường chưa biết là null hoặc mảng rỗng.
+- Không suy đoán giới tính hoặc tuổi từ quan hệ.
+- "500k" = 500000.
+- "1 triệu" = 1000000.
+- Câu trả lời ngắn gọn, thân thiện, tự nhiên.
+- Chỉ hỏi một hoặc hai thông tin quan trọng mỗi lượt.
+- Không tuyên bố đã tìm thấy sản phẩm.
+`;
+
+        const prompt = `
+THÔNG TIN ĐÃ THU THẬP:
+${JSON.stringify(currentSlots, null, 2)}
+
+LỊCH SỬ HỘI THOẠI:
+${JSON.stringify(safeHistory, null, 2)}
+
+TIN NHẮN MỚI NHẤT:
+${message.trim()}
+
+Hãy cập nhật đầy đủ slots dựa trên toàn bộ hội thoại.
+Trả lời theo JSON Schema đã cung cấp.
+`;
+
+    const response = await generateGeminiWithRetry(() =>
+    ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+            systemInstruction,
+            responseMimeType: "application/json",
+            responseSchema: responseJsonSchema,
+            temperature: 0.3,
+            maxOutputTokens: 800
+        }
+    })
+);
+
+        const result = JSON.parse(response.text || "{}");
+        const slots = result.slots || {};
+
+        const missingFields = getGiftMissingFields(slots);
+        const readyForRecommendation = missingFields.length === 0;
+
+        console.log(
+            `[GIFTY GEMINI] ${Date.now() - startTime}ms`
+        );
+
+        return res.json({
+            success: true,
+            reply: result.reply || "Mình có thể giúp bạn chọn món quà phù hợp nhé!",
+            slots,
+            missingFields,
+            readyForRecommendation,
+            processingMode: "gemini"
+        });
+
+    } catch (error) {
+        console.error("Lỗi Gemini chat-assistant:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Gemini chưa thể xử lý tin nhắn. Vui lòng thử lại.",
+            error: process.env.NODE_ENV === "development"
+                ? error.message
+                : undefined
+        });
+    }
+});
+
 
 const PORT = process.env.PORT || 5000;
 

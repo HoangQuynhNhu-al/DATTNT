@@ -126,7 +126,7 @@ function ProductCard({ product }) {
           </span>
         </div>
 
-        <h3 title={productName}>
+        <h3 className="product-name" title={productName}>
           {productName}
         </h3>
 

@@ -655,6 +655,79 @@
   }
 }
 
+/* Khu vực nhập tin nhắn */
+.chat-input-wrapper {
+  padding: 12px;
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+/* Nút tải ảnh */
+.upload-image-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 21px;
+  padding: 8px;
+  color: #777;
+  flex-shrink: 0;
+}
+
+.upload-image-button:hover {
+  color: #e879a5;
+}
+
+.upload-image-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ảnh xem trước trước khi gửi */
+.image-preview-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 12px;
+}
+
+.image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+/* Nút xóa ảnh */
+.remove-image {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #e75b75;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* Ảnh trong lịch sử tin nhắn */
+.chat-message-image {
+  margin-top: 10px;
+}
+
+.chat-message-image img {
+  max-width: 220px;
+  max-height: 220px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+}
+
 /* ========================================
    REDUCE MOTION
 ======================================== */

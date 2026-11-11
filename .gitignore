@@ -30,3 +30,5 @@ yarn-debug.log*
 
 # Local database files
 *.sqlite3
+# Test data
+test_images/

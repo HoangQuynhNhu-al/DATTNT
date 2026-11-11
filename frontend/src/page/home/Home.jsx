@@ -397,20 +397,22 @@ function Home() {
           </p>
 
           <div className="ask-bottom">
-            <span className="ask-placeholder">
-              Nhập nhu cầu của bạn...
-            </span>
-
             <button
               type="button"
-              className="ask-button"
+              className="ask-bottom"
               onClick={() => setShowChat(true)}
+              aria-label="Mở trợ lý GIFTY để nhập nhu cầu tìm quà"
             >
-              Trò chuyện với GIFTY
-              <span aria-hidden="true">↗</span>
+              <span className="ask-placeholder">
+                Nhập nhu cầu của bạn...
+              </span>
+
+              <span className="ask-button">
+                Trò chuyện với GIFTY
+                <span aria-hidden="true">↗</span>
+              </span>
             </button>
           </div>
-
           <div className="ask-suggestions">
             <span>Gợi ý nhanh</span>
 

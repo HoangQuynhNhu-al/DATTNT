@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./ProductDetail.css";
@@ -12,17 +13,94 @@ function ProductDetail() {
   const USD_TO_VND = 26000;
 
   // =========================
-  // FORMAT GIÁ
+  // FORMAT GIÁ THEO NGUỒN
   // =========================
 
-  const formatPrice = (price) => {
-    if (price === null || price === undefined || price === "") {
+  const formatPrice = (product) => {
+    const price = product?.price;
+
+    if (
+      price === null ||
+      price === undefined ||
+      price === ""
+    ) {
       return "Liên hệ";
     }
 
-    const priceVND = Number(price) * USD_TO_VND;
+    const numericPrice = Number(price);
 
-    return Math.round(priceVND).toLocaleString("vi-VN") + "đ";
+    if (
+      !Number.isFinite(numericPrice) ||
+      numericPrice < 0
+    ) {
+      return "Liên hệ";
+    }
+
+    // Xác định nguồn sản phẩm
+    const source = String(
+      product?.source_name ||
+      product?.source_type ||
+      product?.source ||
+      ""
+    ).toLowerCase();
+
+    let priceVND;
+
+    if (
+      source.includes("ebay") ||
+      source.includes("e-bay")
+    ) {
+      // eBay: giá USD → VND
+      priceVND = numericPrice * USD_TO_VND;
+
+    } else if (
+      source.includes("lazada") ||
+      source.includes("shopee")
+    ) {
+      // Lazada và Shopee: giá đã là VND
+      priceVND = numericPrice;
+
+    } else if (
+      product?.price_vnd !== null &&
+      product?.price_vnd !== undefined &&
+      product?.price_vnd !== ""
+    ) {
+      // Sử dụng giá VND backend cung cấp
+      priceVND = Number(product.price_vnd);
+
+    } else {
+      // Nguồn không xác định: giữ nguyên giá
+      priceVND = numericPrice;
+    }
+
+    if (
+      !Number.isFinite(priceVND) ||
+      priceVND < 0
+    ) {
+      return "Liên hệ";
+    }
+
+    return (
+      Math.round(priceVND).toLocaleString("vi-VN") + "đ"
+    );
+  };
+
+  // =========================
+  // KIỂM TRA NGUỒN EBAY
+  // =========================
+
+  const isEbayProduct = (product) => {
+    const source = String(
+      product?.source_name ||
+      product?.source_type ||
+      product?.source ||
+      ""
+    ).toLowerCase();
+
+    return (
+      source.includes("ebay") ||
+      source.includes("e-bay")
+    );
   };
 
   // =========================
@@ -30,6 +108,9 @@ function ProductDetail() {
   // =========================
 
   useEffect(() => {
+    setLoading(true);
+    setProduct(null);
+
     fetch(`http://localhost:5000/api/products/${id}`)
       .then((res) => {
         if (!res.ok) {
@@ -40,11 +121,12 @@ function ProductDetail() {
       })
       .then((data) => {
         setProduct(data);
-        setLoading(false);
       })
       .catch((error) => {
         console.error("Lỗi lấy sản phẩm:", error);
         setProduct(null);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, [id]);
@@ -74,7 +156,7 @@ function ProductDetail() {
   }
 
   // =========================
-  // MỞ EBAY
+  // MỞ TRANG SẢN PHẨM GỐC
   // =========================
 
   const handleBuy = () => {
@@ -127,7 +209,6 @@ function ProductDetail() {
 
       </div>
 
-
       {/* =========================
           THÔNG TIN SẢN PHẨM
       ========================= */}
@@ -141,27 +222,25 @@ function ProductDetail() {
           </span>
         )}
 
-
         {/* Tên tiếng Việt */}
         <h1>
           {product.name_vi || product.name}
         </h1>
 
-
         {/* Giá VND */}
         <div className="detail-price">
-          {formatPrice(product.price)}
+          {formatPrice(product)}
         </div>
 
-
-        {/* Giá gốc USD */}
-        {product.price !== null &&
+        {/* Giá gốc USD - Chỉ dành cho eBay */}
+        {isEbayProduct(product) &&
+          product.price !== null &&
           product.price !== undefined && (
             <div className="detail-original-price">
-              Giá eBay: ${Number(product.price).toFixed(2)} USD
+              Giá gốc eBay: $
+              {Number(product.price).toFixed(2)} USD
             </div>
           )}
-
 
         {/* Mô tả */}
         <p className="detail-description">
@@ -169,14 +248,12 @@ function ProductDetail() {
             "Chưa có mô tả sản phẩm."}
         </p>
 
-
         {/* Người bán */}
         {product.shop_name && (
           <p className="detail-shop">
             🏪 Người bán: {product.shop_name}
           </p>
         )}
-
 
         {/* Rating */}
         {product.rating !== null &&
@@ -186,14 +263,12 @@ function ProductDetail() {
             </p>
           )}
 
-
         {/* Lượt đánh giá */}
         {product.review_count > 0 && (
           <p className="detail-review">
             💬 {Number(product.review_count).toLocaleString()} đánh giá
           </p>
         )}
-
 
         {/* Lượt bán */}
         {product.sold_count > 0 && (
@@ -202,13 +277,12 @@ function ProductDetail() {
           </p>
         )}
 
-
-        {/* Nút eBay */}
+        {/* Nút xem sản phẩm */}
         <button
           className="buy-button"
           onClick={handleBuy}
         >
-          🛍️ Xem sản phẩm trên eBay
+          🛍️ Xem sản phẩm trên sàn
         </button>
 
       </div>

@@ -38,16 +38,42 @@
 }
 
 .product-image {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 225px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #f7f1e9;
+}
+
+/* Quan trọng: CSS áp dụng trực tiếp vào ảnh */
+.product-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
-  padding: 14px;
+  object-position: center;
   transition: transform 0.35s ease;
 }
 
-.product-card:hover .product-image {
-  transform: scale(1.04);
+/* Chỉ phóng to ảnh, không phóng to khung */
+.product-card:hover .product-image img {
+  transform: scale(1.03);
+}
+
+/* Ảnh dự phòng */
+.product-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 42px;
 }
 
 /* ================================
@@ -82,6 +108,12 @@
   padding: 16px;
 }
 
+.product-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .product-category {
   margin: 0 0 8px;
   color: #b66b4c;
@@ -105,9 +137,17 @@
   -webkit-line-clamp: 2;
 }
 
+.product-heart {
+  color: #b66b4c;
+}
+
 /* ================================
    PRODUCT PRICE
 ================================ */
+
+.product-price-row {
+  margin-bottom: 10px;
+}
 
 .product-price {
   margin: 0 0 4px;
@@ -138,6 +178,7 @@
   min-height: 46px;
   margin-top: auto;
   padding: 11px 36px;
+  box-sizing: border-box;
   border: 1px solid #d66e4a;
   border-radius: 6px;
   color: #fff;
@@ -165,9 +206,6 @@
   outline: 3px solid rgba(214, 110, 74, 0.35);
   outline-offset: 3px;
 }
-
-/* Luôn giữ mũi tên bên phải,
-   không làm lệch chữ khỏi chính giữa */
 
 .product-button-arrow {
   position: absolute;
@@ -221,6 +259,7 @@
 @media (max-width: 480px) {
   .product-image {
     height: 160px;
+    padding: 8px;
   }
 
   .product-info {
