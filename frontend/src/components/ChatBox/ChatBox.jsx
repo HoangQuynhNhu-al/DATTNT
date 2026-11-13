@@ -24,7 +24,7 @@ function ChatBox({ onClose }) {
   });
 
   // Lưu thông tin Gemini đã hiểu từ các lượt trò chuyện
-  const [geminiSlots, setGeminiSlots] = useState({});
+  const [, setGeminiSlots] = useState({});
 
   const geminiSlotsRef = useRef({});
 
@@ -626,7 +626,7 @@ useEffect(() => {
 
     const source = getProductSource(product);
 
-    if (source.includes("shopee")) {
+    if (source.includes("lazada")) {
       return price;
     }
 
@@ -764,93 +764,120 @@ useEffect(() => {
 // XỬ LÝ HỘI THOẠI BẰNG GEMINI
 // =====================================================
 
+
 const processGeminiConversation = async (text) => {
-  if (chatProcessing) return;
+    if (chatProcessing) return;
 
-  setChatProcessing(true);
+    setChatProcessing(true);
 
-  try {
-    const response = await fetch(
-      "http://localhost:5000/api/chat-assistant",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: text,
-          history: chatHistoryRef.current,
-          currentSlots: geminiSlotsRef.current
-        })
-      }
-    );
+    try {
+        const response = await fetch(
+            "http://localhost:5000/api/chat-assistant",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: text,
+                    history: chatHistoryRef.current,
+                    currentSlots: geminiSlotsRef.current
+                })
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!response.ok || !data.success) {
-      throw new Error(
-        data.message || "Gemini chưa thể xử lý tin nhắn."
-      );
-    }
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.message || "Gemini chưa thể xử lý tin nhắn."
+            );
+        }
 
-    // Cập nhật thông tin Gemini đã nhận diện
-    const newSlots = data.slots || {};
+        // Cập nhật thông tin Gemini đã nhận diện
+        const newSlots = data.slots || {};
 
-    geminiSlotsRef.current = newSlots;
-    setGeminiSlots(newSlots);
+        geminiSlotsRef.current = newSlots;
+        setGeminiSlots(newSlots);
 
-    // Lưu lượt trò chuyện hiện tại
-    chatHistoryRef.current = [
-      ...chatHistoryRef.current,
-      {
-        role: "user",
-        text: text
-      },
-      {
-        role: "assistant",
-        text: data.reply || ""
-      }
-    ].slice(-8);
+        // Lưu lịch sử hội thoại
+        chatHistoryRef.current = [
+            ...chatHistoryRef.current,
+            {
+                role: "user",
+                text: text
+            },
+            {
+                role: "assistant",
+                text: data.reply || ""
+            }
+        ].slice(-8);
 
-    // Hiển thị câu trả lời của Gemini
-    addMessage(
-      "bot",
-      data.reply || "Mình có thể giúp bạn chọn quà nhé!"
-    );
+        // Hiển thị câu trả lời
+        addMessage(
+            "bot",
+            data.reply || "Mình có thể giúp bạn chọn quà nhé!"
+        );
 
-    // Nếu đã đủ thông tin thì chuyển sang tìm sản phẩm
-    if (data.readyForRecommendation) {
-      const finalAnswers = {
-        receiver: mapGeminiRelationship(newSlots.relationship),
-        occasion: mapGeminiOccasion(newSlots.occasion),
-        gender: mapGeminiGender(newSlots.gender),
-        age: mapGeminiAge(newSlots.age),
-        interests: Array.isArray(newSlots.interests)
-          ? newSlots.interests.join(", ")
-          : String(newSlots.interests || ""),
-        budget: Number(newSlots.budget)
-      };
+        // Nếu đã đủ thông tin thì lấy sản phẩm trực tiếp từ backend
+        if (data.readyForRecommendation) {
+            const finalAnswers = {
+                receiver: mapGeminiRelationship(newSlots.relationship),
+                occasion: mapGeminiOccasion(newSlots.occasion),
+                gender: mapGeminiGender(newSlots.gender),
+                age: mapGeminiAge(newSlots.age),
+                interests: Array.isArray(newSlots.interests)
+                    ? newSlots.interests.join(", ")
+                    : String(newSlots.interests || ""),
+                budget: Number(newSlots.budget)
+            };
 
-      setAnswers(finalAnswers);
+            setAnswers(finalAnswers);
 
-      // Gemini đã xử lý xong, lúc này mới gọi API tìm sản phẩm
-      setChatProcessing(false);
+            // Backend đã tìm sản phẩm từ eBay và Lazada
+            const products = Array.isArray(data.products)
+                ? data.products
+                : [];
 
-      await getRecommendations(finalAnswers, [], false);
-      return;
-    }
+            if (products.length > 0) {
+                const newIds = products
+                    .map(product =>
+                        product.id ?? product.product_id ?? product._id
+                    )
+                    .filter(id => id !== null && id !== undefined)
+                    .map(String);
 
-  } catch (error) {
+                setShownProductIds(newIds);
+                setHasRecommended(true);
+
+                addMessage(
+                    "bot",
+                    `Mình tìm được ${products.length} sản phẩm từ eBay và Lazada phù hợp với bạn đây! 🎁`,
+                    products
+                );
+            } else {
+                addMessage(
+                    "bot",
+                    "Mình chưa tìm thấy sản phẩm phù hợp từ eBay và Lazada. Bạn thử tăng ngân sách hoặc thay đổi sở thích nhé 😥"
+                );
+            }
+        }
+
+    } catch (error) {
     console.error("Gemini conversation error:", error);
 
+    // Dùng bộ phân tích cũ làm phương án dự phòng
+    processConversation(text);
+
     addMessage(
-      "bot",
-      "Xin lỗi bạn, mình đang gặp chút vấn đề khi xử lý câu hỏi. Bạn thử gửi lại nhé! 😥"
+        "bot",
+        "Mình đang gặp sự cố kết nối với Gemini nên tạm thời sử dụng chế độ hỗ trợ cơ bản nhé! 😊"
     );
-  } finally {
-    setChatProcessing(false);
-  }
+    }finally {
+        setChatProcessing(false);
+    }
 };
+
   // =====================================================
 // CHUYỂN ĐỔI DỮ LIỆU GEMINI SANG ĐỊNH DẠNG GIFTY
 // =====================================================
@@ -1088,26 +1115,26 @@ const mapGeminiAge = (value) => {
       }
     }
 
-    addMessage(
-      "bot",
-      "Mình vẫn nghe đây 😊 Bạn có thể nói “đổi sang túi xách”, “tìm món rẻ hơn”, “tìm món khác” hoặc nói loại quà bạn thích nhé."
-    );
+    return false;
   };
 
   // Tìm sản phẩm tương tự bằng hình ảnh
-  const handleImageSearch = async () => {
+  const handleImageSearch = async (messageText = input.trim()) => {
     if (!selectedImage || loading) return;
 
     const image = selectedImage;
     const preview = imagePreview;
-    const text = input.trim();
+    const text = String(messageText || "").trim();
 
-    // Hiển thị ảnh người dùng gửi trong lịch sử chat
+    // Phân tích ngân sách từ nội dung người dùng nhập
+    const budgetVnd = text ? parseBudget(text) : null;
+
+    // Hiển thị ảnh và nội dung người dùng gửi
     addMessage(
-      "user",
-      text || "Mình muốn tìm sản phẩm tương tự hình ảnh này.",
-      [],
-      preview
+        "user",
+        text || "Mình muốn tìm sản phẩm tương tự hình ảnh này.",
+        [],
+        preview
     );
 
     setInput("");
@@ -1116,77 +1143,94 @@ const mapGeminiAge = (value) => {
     setLoading(true);
 
     addMessage(
-      "bot",
-      "Mình đang phân tích hình ảnh và tìm những sản phẩm tương tự cho bạn nhé 🔍"
+        "bot",
+        budgetVnd
+            ? `Mình đang tìm sản phẩm tương tự hình ảnh với ngân sách ${budgetVnd.toLocaleString("vi-VN")}đ nhé 🔍`
+            : "Mình đang phân tích hình ảnh và tìm những sản phẩm tương tự cho bạn nhé 🔍"
     );
 
     try {
-      const formData = new FormData();
+        const formData = new FormData();
 
-      formData.append("image", image);
-      formData.append("message", text);
+        formData.append("image", image);
+        formData.append("message", text);
 
-      const response = await fetch(
-        "http://localhost:5000/api/image-search",
-        {
-          method: "POST",
-          body: formData
+        // Chỉ gửi ngân sách khi nhận diện được số tiền
+        if (budgetVnd && budgetVnd > 0) {
+            formData.append("budget", String(budgetVnd));
         }
-      );
 
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Không thể phân tích hình ảnh.");
-      }
-
-      const products = Array.isArray(data.products)
-        ? data.products
-        : [];
-
-      if (products.length > 0) {
-        addMessage(
-          "bot",
-          `Mình tìm được ${products.length} sản phẩm có đặc điểm tương tự hình ảnh bạn gửi 🎁`,
-          products
+        const response = await fetch(
+            "http://localhost:5000/api/image-search",
+            {
+                method: "POST",
+                body: formData
+            }
         );
-      } else {
-        addMessage(
-          "bot",
-          "Mình chưa tìm thấy sản phẩm tương tự trong dữ liệu hiện tại. Bạn thử ảnh khác nhé!"
-        );
-      }
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(data.message || "Không thể phân tích hình ảnh.");
+        }
+
+        const products = Array.isArray(data.products)
+            ? data.products
+            : [];
+
+        if (products.length > 0) {
+            addMessage(
+                "bot",
+                budgetVnd
+                    ? `Mình tìm được ${products.length} sản phẩm tương tự hình ảnh trong ngân sách ${budgetVnd.toLocaleString("vi-VN")}đ đây! 🎁`
+                    : `Mình tìm được ${products.length} sản phẩm có đặc điểm tương tự hình ảnh bạn gửi 🎁`,
+                products
+            );
+        } else {
+            addMessage(
+                "bot",
+                budgetVnd
+                    ? `Mình chưa tìm thấy sản phẩm tương tự trong ngân sách ${budgetVnd.toLocaleString("vi-VN")}đ. Bạn thử tăng ngân sách hoặc gửi ảnh khác nhé!`
+                    : "Mình chưa tìm thấy sản phẩm tương tự trong dữ liệu hiện tại. Bạn thử ảnh khác nhé!"
+            );
+        }
+
     } catch (error) {
-      console.error("Image search error:", error);
+        console.error("Image search error:", error);
 
-      addMessage(
-        "bot",
-        "Xin lỗi bạn 😥 Mình chưa thể tìm kiếm bằng hình ảnh lúc này. Bạn thử lại nhé!"
-      );
+        addMessage(
+            "bot",
+            "Xin lỗi bạn 😥 Mình chưa thể tìm kiếm bằng hình ảnh lúc này. Bạn thử lại nhé!"
+        );
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   // Gửi tin nhắn
  const handleSend = () => {
-  if (loading || chatProcessing) return;
+    if (loading || chatProcessing) return;
 
-  // Giữ nguyên chức năng tìm kiếm bằng hình ảnh
-  if (selectedImage) {
-    handleImageSearch();
-    return;
-  }
+    const text = input.trim();
 
-  const text = input.trim();
+    // Nếu đã chọn ảnh thì gửi ảnh kèm nội dung và ngân sách
+    if (selectedImage) {
+        handleImageSearch(text);
+        return;
+    }
 
-  if (!text) return;
+    if (!text) return;
 
-  addMessage("user", text);
-  setInput("");
+    addMessage("user", text);
+    setInput("");
 
-  // Mọi tin nhắn văn bản đều được Gemini xử lý
-  processGeminiConversation(text);
+    // Nếu đã có sản phẩm, ưu tiên xử lý yêu cầu đổi sản phẩm
+    if (hasRecommended && processFollowUp(text)) {
+        return;
+    }
+
+    // Những nội dung khác tiếp tục được Gemini xử lý
+    processGeminiConversation(text);
 };
   // Nhấn Enter để gửi
   const handleKeyDown = (event) => {

@@ -10,7 +10,7 @@ INPUT_FILE = DATA_DIR / "products.json"
 SOURCE_NAME = "lazada"
 
 
-DAILY_LIMIT = 200
+DAILY_LIMIT = 50
 
 
 ALLOWED_CATEGORIES = {

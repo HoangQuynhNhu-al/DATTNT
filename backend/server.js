@@ -106,6 +106,7 @@ app.get("/api/admin/products", async (req, res) => {
             FROM products
             WHERE LOWER(source_name) LIKE '%ebay%'
                OR LOWER(source_name) LIKE '%shopee%'
+                OR LOWER(source_name) LIKE '%lazada%'
             ORDER BY crawled_at DESC, id DESC
         `);
 
@@ -218,138 +219,81 @@ function containsKeyword(text, keywords) {
     });
 }
 
-// =========================
-// Phân loại sản phẩm
-// =========================
+// =====================================================
+// PHÂN LOẠI SẢN PHẨM CHÍNH XÁC
+// =====================================================
 
 function getProductGroup(product) {
-    const text = `
-        ${product.name || ""}
-        ${product.category || ""}
-        ${product.name_vi || ""}
-    `.toLowerCase();
+    // Chỉ sử dụng tên sản phẩm để phân loại.
+    // Không dùng description vì mô tả có thể chứa nhiều từ khóa không liên quan.
+    const name = normalizeGiftText([
+        product.name,
+        product.name_vi
+    ].filter(Boolean).join(" "));
 
-    if (/\bo[\s-]?ring\b/i.test(text)) {
-        return "other";
+    const category = normalizeGiftText(product.category || "");
+
+    function hasWord(text, words) {
+        return words.some(word => {
+            const escaped = normalizeGiftText(word).replace(
+                /[.*+?^${}()|[\]\\]/g,
+                "\\$&"
+            );
+
+            return new RegExp(
+                `(^|\\s)${escaped}(?=\\s|$)`,
+                "i"
+            ).test(text);
+        });
     }
 
+    // Váy phải được ưu tiên trước áo vì có loại váy áo.
+    if (hasWord(name, [
+        "vay", "dam", "dress", "skirt"
+    ])) return "dress";
+
+    if (hasWord(name, [
+        "quan", "pants", "trousers",
+        "jeans", "shorts", "leggings", "joggers"
+    ])) return "pants";
+
+    if (hasWord(name, [
+        "ao", "shirt", "t shirt", "tshirt",
+        "tee", "blouse", "polo", "hoodie",
+        "sweater", "jacket", "coat", "cardigan"
+    ])) return "shirt";
+
     const groups = {
-        jewelry_box: [
-            "jewelry box", "jewelry boxes",
-            "jewelry organizer", "jewelry storage",
-            "jewelry packaging", "ring box",
-            "ring boxes", "earring box",
-            "necklace box", "bracelet box",
-            "hộp trang sức"
-        ],
-
-        phone_case: [
-            "phone case", "phone cover",
-            "iphone case", "iphone cover",
-            "samsung case", "samsung cover",
-            "galaxy case", "galaxy cover",
-            "mobile phone case",
-            "ốp điện thoại", "ốp lưng"
-        ],
-
-        keychain: [
-            "keychain", "key chain", "key holder",
-            "key ring", "bag charm",
-            "móc khóa", "móc khoá"
-        ],
-
-        wallet: [
-            "wallet", "card holder", "money clip",
-            "ví", "bóp"
-        ],
-
-        watch: [
-            "watch", "wristwatch",
-            "wrist watch", "đồng hồ"
-        ],
-
-        photo_frame: [
-            "photo frame", "photo frames",
-            "picture frame", "picture frames",
-            "poster frame", "document frame",
-            "wall frame", "khung ảnh", "khung hình"
-        ],
-
-        jewelry: [
-            "necklace", "pendant", "bracelet",
-            "bangle", "earring", "earrings",
-            "ring", "rings", "charm", "brooch",
-            "jewelry", "jewellery", "trang sức",
-            "dây chuyền", "vòng tay", "bông tai",
-            "hoa tai", "nhẫn"
-        ],
-
-        clothing: [
-            "shirt", "t-shirt", "t shirt",
-            "dress", "jacket", "coat", "parka",
-            "hoodie", "sweater", "blouse",
-            "jeans", "pants", "trousers", "skirt",
-            "clothing", "clothes", "apparel",
-            "top", "tops", "áo", "quần", "váy",
-            "đầm", "thời trang"
-        ],
-
-        shoes: [
-            "shoes", "shoe", "sneakers",
-            "sneaker", "boots", "boot",
-            "sandals", "sandal", "heels",
-            "flats", "giày"
-        ],
-
-        perfume: [
-            "perfume", "fragrance", "cologne",
-            "eau de", "nước hoa"
-        ],
-
-        cosmetics: [
-            "makeup", "cosmetics", "foundation",
-            "lipstick", "mascara", "eyeliner",
-            "concealer", "blush", "lip gloss",
-            "make up", "mỹ phẩm", "trang điểm",
-            "son", "phấn", "kem nền"
-        ],
-
-        bag: [
-            "handbag", "handbags", "backpack",
-            "backpacks", "tote bag", "shoulder bag",
-            "crossbody", "purse", "bag", "túi",
-            "túi xách", "ba lô", "balo"
-        ],
-
-        sunglasses: [
-            "sunglasses", "sun glasses", "kính râm"
-        ],
-
-        socks: [
-            "sock", "socks", "vớ", "tất"
-        ],
-
-        toy: [
-            "toy", "toys", "stuffed animal",
-            "stuffed animals", "plush",
-            "teddy bear", "doll", "lego",
-            "thú nhồi bông", "thú bông", "đồ chơi"
-        ],
-
-        book: [
-            "book", "books", "sách"
-        ],
-
-        mug: [
-            "mug", "mugs", "cup", "cups", "cốc", "ly"
-        ]
+        mouse: ["mouse", "computer mouse", "chuot may tinh", "chuot khong day"],
+        keyboard: ["keyboard", "ban phim"],
+        monitor: ["monitor", "man hinh"],
+        cosmetics: ["lipstick", "son", "makeup", "mascara", "foundation", "my pham"],
+        perfume: ["perfume", "fragrance", "nuoc hoa"],
+        shoes: ["shoes", "sneakers", "boots", "sandals", "giay"],
+        bag: ["handbag", "backpack", "tote bag", "shoulder bag", "tui xach", "balo"],
+        wallet: ["wallet", "card holder", "vi", "bop"],
+        watch: ["watch", "wristwatch", "dong ho"],
+        jewelry: ["necklace", "bracelet", "earring", "jewelry", "trang suc", "day chuyen", "vong tay"],
+        phone_case: ["phone case", "phone cover", "op dien thoai", "op lung"],
+        keychain: ["keychain", "key chain", "moc khoa"],
+        toy: ["toy", "plush", "teddy bear", "doll", "lego", "do choi", "gau bong"],
+        book: ["book", "books", "sach"],
+        mug: ["mug", "cup", "coc", "ly"],
+        photo_frame: ["photo frame", "picture frame", "khung anh"]
     };
 
     for (const [group, keywords] of Object.entries(groups)) {
-        if (containsKeyword(text, keywords)) {
+        if (hasWord(name, keywords)) {
             return group;
         }
     }
+
+    // Chỉ dùng category nếu đó là danh mục cụ thể.
+    if (hasWord(category, ["shirt", "ao"])) return "shirt";
+    if (hasWord(category, ["pants", "quan"])) return "pants";
+    if (hasWord(category, ["dress", "skirt", "vay", "dam"])) return "dress";
+    if (hasWord(category, ["mouse", "chuot may tinh"])) return "mouse";
+    if (hasWord(category, ["keyboard", "ban phim"])) return "keyboard";
 
     return "other";
 }
@@ -505,11 +449,12 @@ app.post("/api/recommend", async (req, res) => {
               AND (
                     LOWER(COALESCE(source_name, '')) LIKE '%ebay%'
                     OR LOWER(COALESCE(source_name, '')) LIKE '%shopee%'
+                    OR LOWER(COALESCE(source_name, '')) LIKE '%lazada%'
               )
         `);
 
         console.log(
-            `Tổng sản phẩm eBay và Shopee trong DB: ${products.length}`
+            `Tổng sản phẩm eBay và Shopee và Lazada trong DB: ${products.length}`
         );
 
         // =====================================================
@@ -528,6 +473,9 @@ app.post("/api/recommend", async (req, res) => {
             if (source.includes("ebay") || source.includes("e-bay")) {
                 return "ebay";
             }
+            if (source.includes("lazada")) {
+                return "lazada";
+            }
 
             return "unknown";
         }
@@ -540,6 +488,11 @@ app.post("/api/recommend", async (req, res) => {
             }
 
             const source = getSourceType(product);
+
+            // Lazada lưu giá bằng VND.
+            if (source === "lazada") {
+                return price;
+            }
 
             // Shopee lưu giá VND.
             if (source === "shopee") {
@@ -893,11 +846,11 @@ app.post("/api/admin/crawl", (req, res) => {
     // 7. Cho phép chọn eBay hoặc Shopee
     const source = String(config.source || "ebay").toLowerCase();
 
-    if (!["ebay", "shopee"].includes(source)) {
-        return res.status(400).json({
-            success: false,
-            message: "Nguồn dữ liệu chỉ hỗ trợ eBay hoặc Shopee."
-        });
+    if (!["ebay", "shopee", "lazada"].includes(source)) {
+    return res.status(400).json({
+        success: false,
+        message: "Nguồn dữ liệu chỉ hỗ trợ eBay, Shopee hoặc Lazada."
+    });
     }
 
     // 8. Xác định đường dẫn crawler
@@ -919,6 +872,7 @@ app.post("/api/admin/crawl", (req, res) => {
         relationship: config.relationship,
         occasion: config.occasion,
         category: config.category,
+        lazadaCategory: config.lazadaCategory,
         gender: config.gender,
         ageGroup: config.ageGroup,
         keyword: typeof config.keyword === "string"
@@ -994,7 +948,7 @@ app.post("/api/admin/crawl", (req, res) => {
     // 13. Xử lý kết quả sau khi Python kết thúc
     child.on("close", (code) => {
         clearTimeout(timeout);
-        cleanupImage();
+        // cleanupImage();
 
 
         if (responded) return;
@@ -1156,8 +1110,26 @@ app.post(
 
             const message = req.body.message || "";
 
-            console.log("Đã nhận ảnh:", req.file.filename);
-            console.log("Mô tả:", message);
+                // Nhận ngân sách từ ChatBox
+                const budgetVnd = req.body.budget
+                    ? Number(req.body.budget)
+                    : null;
+
+                if (
+                    budgetVnd !== null &&
+                    (!Number.isFinite(budgetVnd) || budgetVnd <= 0)
+                ) {
+                    cleanupImage();
+
+                    return res.status(400).json({
+                        success: false,
+                        message: "Ngân sách không hợp lệ."
+                    });
+                }
+
+                console.log("Đã nhận ảnh:", req.file.filename);
+                console.log("Mô tả:", message);
+                console.log("Ngân sách:", budgetVnd);
 
             // Đường dẫn Python trong môi trường ảo image_ai
             const imageAiDir = path.join(__dirname, "..", "image_ai");
@@ -1327,7 +1299,7 @@ app.post(
                         ])
                     );
 
-                    const recommendations = aiResults
+                    let recommendations = aiResults
                         .map(result => {
                             const product = productMap.get(
                                 Number(result.product_id)
@@ -1335,22 +1307,80 @@ app.post(
 
                             if (!product) return null;
 
+                            const source = String(
+                                product.source_name || ""
+                            ).toLowerCase();
+
+                            const originalPrice = Number(product.price);
+
+                            let priceVnd = null;
+
+                            // eBay lưu giá USD
+                            if (
+                                source.includes("ebay") ||
+                                source.includes("e-bay")
+                            ) {
+                                if (
+                                    Number.isFinite(originalPrice) &&
+                                    originalPrice > 0
+                                ) {
+                                    priceVnd = Math.round(
+                                        originalPrice * USD_TO_VND
+                                    );
+                                }
+                            }
+
+                            // Lazada lưu giá VND
+                            else if (source.includes("lazada")) {
+                                if (
+                                    Number.isFinite(originalPrice) &&
+                                    originalPrice > 0
+                                ) {
+                                    priceVnd = Math.round(originalPrice);
+                                }
+                            }
+
                             return {
                                 ...product,
+                                price_vnd: priceVnd,
                                 similarity: result.similarity
                             };
                         })
                         .filter(Boolean);
 
-                    console.log(
-                        "Số sản phẩm tìm được:",
-                        recommendations.length
-                    );
+                    // Nếu người dùng nhập ngân sách thì tiến hành lọc
+                    if (budgetVnd !== null) {
+                        recommendations = recommendations.filter(product => {
+                            // Không xác định được giá hoặc nguồn thì không đưa vào kết quả
+                            if (product.price_vnd === null) {
+                                return false;
+                            }
+
+                            return product.price_vnd <= budgetVnd;
+                        });
+                    }
+
+                    // Giới hạn kết quả trả về
+                    recommendations = recommendations.slice(0, 6);
+
+                    console.log("-----------------------------------");
+                    console.log("[IMAGE SEARCH] Ngân sách:", budgetVnd);
+                    console.log("[IMAGE SEARCH] Số sản phẩm FAISS:", aiResults.length);
+                    console.log("[IMAGE SEARCH] Số sản phẩm sau lọc:", recommendations.length);
+                    console.log("-----------------------------------");
 
                     return res.json({
                         success: true,
-                        message: "Tìm kiếm bằng hình ảnh thành công.",
+
+                        message: recommendations.length > 0
+                            ? "Tìm kiếm bằng hình ảnh thành công."
+                            : budgetVnd !== null
+                                ? "Không tìm thấy sản phẩm tương tự trong ngân sách."
+                                : "Không tìm thấy sản phẩm tương tự.",
+
                         count: recommendations.length,
+                        budget: budgetVnd,
+
                         products: recommendations
                     });
 
@@ -1459,6 +1489,49 @@ function normalizeGiftText(value) {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/đ/g, "d")
         .replace(/\s+/g, " ");
+}
+function normalizeGiftGroup(value) {
+    const text = normalizeGiftText(value);
+
+    const aliases = {
+        clothing: ["quan ao", "ao quan", "thoi trang", "clothing", "fashion"],
+
+        shirt: ["ao", "shirt", "t shirt", "tshirt", "blouse", "polo", "hoodie", "jacket"],
+        pants: ["quan", "pants", "trousers", "jeans", "shorts", "leggings"],
+        dress: ["vay", "dam", "dress", "skirt"],
+
+        mouse: ["chuot", "chuot may tinh", "mouse", "computer mouse"],
+        keyboard: ["ban phim", "keyboard"],
+
+        cosmetics: ["my pham", "trang diem", "makeup", "son", "lipstick", "mascara"],
+        perfume: ["nuoc hoa", "perfume", "fragrance"],
+        shoes: ["giay", "shoes", "sneakers"],
+        bag: ["tui xach", "balo", "backpack", "handbag"],
+        wallet: ["vi", "bop", "wallet"],
+        watch: ["dong ho", "watch"],
+        jewelry: ["trang suc", "nhan", "vong tay", "day chuyen", "bong tai"],
+        phone_case: ["op dien thoai", "op lung", "phone case"],
+        keychain: ["moc khoa", "keychain"],
+        toy: ["do choi", "gau bong", "thu bong", "toy"],
+        book: ["sach", "book"],
+        mug: ["coc", "ly", "mug"],
+        photo_frame: ["khung anh", "khung hinh", "photo frame"]
+    };
+
+    // Áo quần là nhóm chung, phải kiểm tra trước áo và quần riêng.
+    if (hasGiftPhrase(text, aliases.clothing)) {
+        return "clothing";
+    }
+
+    for (const [group, words] of Object.entries(aliases)) {
+        if (group === "clothing") continue;
+
+        if (hasGiftPhrase(text, words)) {
+            return group;
+        }
+    }
+
+    return "unknown";
 }
 
 // Kiểm tra cụm từ độc lập
@@ -1589,7 +1662,10 @@ function detectFastGiftAnswer(message, currentSlots = {}) {
         { value: "bag", words: ["tui xach", "tui", "balo", "ba lo"] },
         { value: "watch", words: ["dong ho", "watch"] },
         { value: "jewelry", words: ["trang suc", "day chuyen", "vong tay", "bong tai"] },
-        { value: "clothing", words: ["quan ao", "thoi trang", "ao", "vay", "dam"] },
+        { value: "shirt", words: ["ao", "shirt", "t shirt", "tshirt", "blouse", "polo", "hoodie", "jacket"] },
+        { value: "pants", words: ["quan", "pants", "trousers", "jeans", "shorts"] },
+        { value: "dress", words: ["vay", "dam", "dress", "skirt"] },
+        { value: "clothing", words: ["quan ao", "ao quan", "thoi trang", "clothing", "fashion"] },
         { value: "shoes", words: ["giay", "sneaker"] },
         { value: "book", words: ["sach", "book"] },
         { value: "toy", words: ["do choi", "gau bong", "thu bong"] },
@@ -1726,6 +1802,661 @@ function getGiftNextQuestion(missingFields) {
 
 
 // =====================================================
+// GIFTY - TÌM SẢN PHẨM TỪ CẢ EBAY VÀ LAZADA CHO CHATBOX
+// =====================================================
+
+async function searchChatProducts(slots = {}) {
+    const budgetVnd = Number(slots.budget);
+
+    if (!Number.isFinite(budgetVnd) || budgetVnd <= 0) {
+        return [];
+    }
+
+    // Lấy sản phẩm từ eBay và Lazada.
+    const [rows] = await pool.query(`
+        SELECT *
+        FROM products
+        WHERE is_active = 1
+          AND price IS NOT NULL
+          AND price > 0
+          AND (
+              LOWER(COALESCE(source_name, '')) LIKE '%ebay%'
+              OR LOWER(COALESCE(source_name, '')) LIKE '%lazada%'
+          )
+        ORDER BY crawled_at DESC, id DESC
+        LIMIT 5000
+    `);
+
+    const rawGroups = [
+        ...(Array.isArray(slots.interests) ? slots.interests : []),
+        ...(Array.isArray(slots.categories) ? slots.categories : [])
+    ];
+
+    const desiredGroups = new Set(
+    rawGroups
+        .map(normalizeGiftGroup)
+        .filter(group => group && group !== "unknown")
+    );
+
+    // Nếu người dùng đã nhập sở thích nhưng hệ thống không nhận diện được,
+    // không được trả về toàn bộ sản phẩm.
+    if (rawGroups.length > 0 && desiredGroups.size === 0) {
+        console.log("[CHAT SEARCH] Không nhận diện được loại sản phẩm:", rawGroups);
+        return [];
+    }
+
+    const gender = String(slots.gender || "")
+        .toLowerCase()
+        .trim();
+
+    const age = String(slots.age || "")
+        .toLowerCase()
+        .trim();
+
+    console.log("[CHAT SEARCH] Ngân sách:", budgetVnd);
+    console.log("[CHAT SEARCH] Sở thích:", rawGroups);
+    console.log("[CHAT SEARCH] Nhóm chuẩn hóa:", [...desiredGroups]);
+
+    const scoredProducts = rows.map(product => {
+        const sourceName = String(
+            product.source_name || ""
+        ).toLowerCase();
+
+        let sourceType = "unknown";
+
+        if (
+            sourceName.includes("ebay") ||
+            sourceName.includes("e-bay")
+        ) {
+            sourceType = "ebay";
+        } else if (sourceName.includes("lazada")) {
+            sourceType = "lazada";
+        }
+
+        if (sourceType === "unknown") {
+            return null;
+        }
+
+        const originalPrice = Number(product.price);
+
+        if (
+            !Number.isFinite(originalPrice) ||
+            originalPrice <= 0
+        ) {
+            return null;
+        }
+
+        // Quy đổi giá về VND.
+        const priceVnd = sourceType === "ebay"
+            ? originalPrice * USD_TO_VND
+            : originalPrice;
+
+        // Không vượt ngân sách.
+        if (priceVnd > budgetVnd) {
+            return null;
+        }
+
+        // Kiểm tra giới tính.
+        const productGender = String(
+            product.gender || ""
+        ).toLowerCase().trim();
+
+        if (
+            gender &&
+            productGender &&
+            productGender !== "unisex" &&
+            productGender !== gender
+        ) {
+            return null;
+        }
+
+        // Kiểm tra độ tuổi.
+        const productAge = String(
+            product.age_group || ""
+        ).toLowerCase().trim();
+
+        if (
+            age &&
+            productAge &&
+            productAge !== "all" &&
+            productAge !== age
+        ) {
+            return null;
+        }
+
+        // Phân loại sản phẩm.
+        const productGroup = getProductGroup(product);
+
+        // Chỉ lọc theo sở thích khi có nhóm yêu cầu.
+        if (desiredGroups.size === 0) {
+    return null;
+}
+
+        // Nếu yêu cầu một nhóm cụ thể thì chỉ nhận đúng nhóm đó.
+        // Ngoại lệ: người dùng yêu cầu thời trang chung.
+        if (desiredGroups.has("clothing")) {
+            if (!["shirt", "pants", "dress"].includes(productGroup)) {
+                return null;
+            }
+        } else {
+            if (!desiredGroups.has(productGroup)) {
+                return null;
+            }
+        }
+
+        // Chấm điểm.
+        let score = 15;
+
+        if (desiredGroups.has(productGroup)) {
+            score += 50;
+        }
+
+        if (gender && productGender === gender) {
+            score += 20;
+        } else if (productGender === "unisex") {
+            score += 10;
+        }
+
+        if (age && productAge === age) {
+            score += 15;
+        } else if (productAge === "all") {
+            score += 5;
+        }
+
+        const rating = Number(product.rating);
+
+        if (
+            product.rating !== null &&
+            product.rating !== undefined &&
+            Number.isFinite(rating)
+        ) {
+            score += Math.max(0, Math.min(rating, 5)) * 2;
+        }
+
+        if (product.image_url) {
+            score += 2;
+        }
+
+        if (product.product_url || product.affiliate_url) {
+            score += 2;
+        }
+
+        return {
+            ...product,
+            source_type: sourceType,
+            price_vnd: Math.round(priceVnd),
+            product_group: productGroup,
+            recommendation_score: score
+        };
+    }).filter(Boolean);
+
+    // Sắp xếp theo điểm phù hợp.
+    scoredProducts.sort((a, b) => {
+        if (b.recommendation_score !== a.recommendation_score) {
+            return b.recommendation_score - a.recommendation_score;
+        }
+
+        return (
+            Math.abs(a.price_vnd - budgetVnd) -
+            Math.abs(b.price_vnd - budgetVnd)
+        );
+    });
+
+    // Lấy tối đa 3 sản phẩm mỗi nguồn.
+    const ebayProducts = scoredProducts
+        .filter(product => product.source_type === "ebay")
+        .slice(0, 3);
+
+    const lazadaProducts = scoredProducts
+        .filter(product => product.source_type === "lazada")
+        .slice(0, 3);
+
+    // Xen kẽ kết quả hai nguồn.
+    const recommendations = [];
+
+    for (let i = 0; i < 3; i++) {
+        if (ebayProducts[i]) {
+            recommendations.push(ebayProducts[i]);
+        }
+
+        if (lazadaProducts[i]) {
+            recommendations.push(lazadaProducts[i]);
+        }
+    }
+
+    console.log("-----------------------------------");
+    console.log("[CHAT SEARCH] Tổng sản phẩm DB:", rows.length);
+    console.log("[CHAT SEARCH] Sau khi lọc:", scoredProducts.length);
+    console.log("[CHAT SEARCH] eBay:", ebayProducts.length);
+    console.log("[CHAT SEARCH] Lazada:", lazadaProducts.length);
+    console.log("[CHAT SEARCH] Kết quả:", recommendations.length);
+    console.log("-----------------------------------");
+
+    return recommendations;
+}
+
+
+// =====================================================
+// TÌM SẢN PHẨM TRỰC TIẾP THEO TỪ KHÓA VÀ NGÂN SÁCH
+// =====================================================
+
+function parseDirectSearchBudget(message) {
+    const text = normalizeGiftText(message);
+
+    // Ưu tiên lấy số tiền có đơn vị rõ ràng.
+    const moneyMatches = [
+        ...text.matchAll(
+            /(\d+(?:[.,]\d+)?)\s*(trieu|tr|k|nghin|ngan|vnd|dong)\b/g
+        )
+    ];
+
+    let raw = null;
+    let unit = "";
+
+    if (moneyMatches.length > 0) {
+        const match = moneyMatches[moneyMatches.length - 1];
+        raw = match[1];
+        unit = match[2];
+    } else {
+        // Hỗ trợ dạng 300.000 hoặc 500000.
+        const numberMatches = [
+            ...text.matchAll(/\d[\d.,]*/g)
+        ];
+
+        if (numberMatches.length === 0) return null;
+
+        const match = numberMatches[numberMatches.length - 1];
+        raw = match[0];
+    }
+
+    let amount;
+
+    if (/^\d{1,3}([.,]\d{3})+$/.test(raw)) {
+        amount = Number(raw.replace(/[.,]/g, ""));
+    } else {
+        amount = Number(raw.replace(",", "."));
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return null;
+    }
+
+    if (unit === "trieu" || unit === "tr") {
+        amount *= 1000000;
+    } else if (
+        unit === "k" ||
+        unit === "nghin" ||
+        unit === "ngan"
+    ) {
+        amount *= 1000;
+    } else if (!unit && amount < 1000) {
+        amount *= 1000;
+    }
+
+    return Math.round(amount);
+}
+
+
+// Tách tên sản phẩm khỏi câu hỏi và phần ngân sách.
+function extractDirectProductQuery(message) {
+    let text = normalizeGiftText(message);
+
+    text = text
+        .replace(
+            /\d+(?:[.,]\d+)?\s*(?:trieu|tr|k|nghin|ngan|vnd|dong)\b/g,
+            " "
+        )
+        .replace(/\d{1,3}(?:[.,]\d{3})+/g, " ")
+        .replace(/\b\d{4,}\b/g, " ");
+
+    const removeWords = [
+        "tim", "kiem", "san pham", "mon do",
+        "cho toi", "giup toi", "giup minh",
+        "minh muon", "toi muon", "minh can",
+        "toi can", "mua", "gia", "duoi",
+        "tren", "toi da", "khoang", "tam",
+        "ngan sach", "khong qua", "nho hon",
+        "hoac thap hon", "dong", "vnd"
+    ];
+
+    for (const word of removeWords) {
+        text = text.replace(
+            new RegExp(
+                word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                "g"
+            ),
+            " "
+        );
+    }
+
+    const stopWords = new Set([
+        "va", "mot", "vai", "loai", "nao",
+        "nhung", "cac", "san", "pham"
+    ]);
+
+    return text
+        .split(/\s+/)
+        .filter(word => word.length >= 2 && !stopWords.has(word))
+        .join(" ")
+        .trim();
+}
+
+// =====================================================
+// PHÂN LOẠI CHÍNH XÁC ÁO - QUẦN - VÁY
+// =====================================================
+
+function getDirectClothingGroups(product) {
+    const fields = [
+        product.name,
+        product.name_vi,
+        product.category
+    ]
+        .filter(Boolean)
+        .map(normalizeGiftText);
+
+    const patterns = {
+        shirt: [
+            "ao",
+            "shirt",
+            "t shirt",
+            "tshirt",
+            "tee",
+            "blouse",
+            "polo",
+            "hoodie",
+            "sweater",
+            "jacket",
+            "coat",
+            "cardigan"
+        ],
+
+        pants: [
+            "quan",
+            "pants",
+            "trousers",
+            "jeans",
+            "shorts",
+            "leggings",
+            "joggers"
+        ],
+
+        dress: [
+            "vay",
+            "dam",
+            "dress",
+            "skirt"
+        ]
+    };
+
+    function hasPhrase(text, phrase) {
+        const escaped = phrase.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+        );
+
+        return new RegExp(
+            `(^|\\s)${escaped}(?=\\s|$)`,
+            "i"
+        ).test(text);
+    }
+
+    function classify(text) {
+        const groups = new Set();
+
+        for (const [group, keywords] of Object.entries(patterns)) {
+            if (keywords.some(keyword => hasPhrase(text, keyword))) {
+                groups.add(group);
+            }
+        }
+
+        return groups;
+    }
+
+    // Ưu tiên tên sản phẩm và tên tiếng Việt.
+    for (const text of fields) {
+        const groups = classify(text);
+
+        if (groups.size > 0) {
+            return groups;
+        }
+    }
+
+    // Chỉ dùng mô tả nếu tên và danh mục chưa phân loại được.
+    return classify(normalizeGiftText(product.description || ""));
+}
+
+
+// Nhận diện loại trang phục người dùng muốn tìm.
+function getRequestedDirectClothingGroups(query) {
+    const text = normalizeGiftText(query);
+    const groups = new Set();
+
+    const aliases = {
+        shirt: [
+            "ao",
+            "shirt",
+            "t shirt",
+            "tshirt",
+            "tee",
+            "blouse",
+            "polo",
+            "hoodie",
+            "sweater",
+            "jacket",
+            "coat",
+            "cardigan"
+        ],
+
+        pants: [
+            "quan",
+            "pants",
+            "trousers",
+            "jeans",
+            "shorts",
+            "leggings",
+            "joggers"
+        ],
+
+        dress: [
+            "vay",
+            "dam",
+            "dress",
+            "skirt"
+        ]
+    };
+
+    function hasPhrase(phrase) {
+        const escaped = phrase.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+        );
+
+        return new RegExp(
+            `(^|\\s)${escaped}(?=\\s|$)`,
+            "i"
+        ).test(text);
+    }
+
+    for (const [group, keywords] of Object.entries(aliases)) {
+        if (keywords.some(hasPhrase)) {
+            groups.add(group);
+        }
+    }
+
+    return groups;
+}
+
+
+// =====================================================
+// TÌM SẢN PHẨM TRỰC TIẾP THEO TỪ KHÓA VÀ NGÂN SÁCH
+// =====================================================
+
+async function searchProductsByQuery(query, budgetVnd) {
+    if (!query) return [];
+
+    const hasBudget =
+        Number.isFinite(Number(budgetVnd)) &&
+        Number(budgetVnd) > 0;
+
+    const [rows] = await pool.query(`
+        SELECT *
+        FROM products
+        WHERE is_active = 1
+          AND price IS NOT NULL
+          AND price > 0
+          AND (
+              LOWER(COALESCE(source_name, '')) LIKE '%ebay%'
+              OR LOWER(COALESCE(source_name, '')) LIKE '%lazada%'
+          )
+        ORDER BY crawled_at DESC, id DESC
+        LIMIT 5000
+    `);
+
+    const normalizedQuery = normalizeGiftText(query);
+
+    const requestedClothingGroups =
+        getRequestedDirectClothingGroups(query);
+
+    const clothingSearch = requestedClothingGroups.size > 0;
+
+    const keywords = normalizedQuery
+        .split(/\s+/)
+        .filter(Boolean);
+
+    const results = rows.map(product => {
+        const source = String(
+            product.source_name || ""
+        ).toLowerCase();
+
+        const originalPrice = Number(product.price);
+
+        if (
+            !Number.isFinite(originalPrice) ||
+            originalPrice <= 0
+        ) {
+            return null;
+        }
+
+        let sourceType;
+        let priceVnd;
+
+        if (
+            source.includes("ebay") ||
+            source.includes("e-bay")
+        ) {
+            sourceType = "ebay";
+            priceVnd = originalPrice * USD_TO_VND;
+        } else if (source.includes("lazada")) {
+            sourceType = "lazada";
+            priceVnd = originalPrice;
+        } else {
+            return null;
+        }
+
+        // Lọc ngân sách nếu người dùng có nhập.
+        if (hasBudget && priceVnd > Number(budgetVnd)) {
+            return null;
+        }
+
+        const productText = normalizeGiftText([
+            product.name,
+            product.name_vi,
+            product.category,
+            product.description
+        ].filter(Boolean).join(" "));
+
+        let score = 0;
+        let productGroups = [];
+
+        if (clothingSearch) {
+            // Phải đúng loại áo, quần hoặc váy.
+            const detectedGroups =
+                getDirectClothingGroups(product);
+
+            const matchedGroups = [
+                ...requestedClothingGroups
+            ].filter(group => detectedGroups.has(group));
+
+            // Không đúng loại người dùng tìm thì loại bỏ.
+            if (matchedGroups.length === 0) {
+                return null;
+            }
+
+            productGroups = [...detectedGroups];
+
+            score += matchedGroups.length * 50;
+
+        } else {
+            // Tìm sản phẩm khác bằng từ khóa.
+            const matchedKeywords = keywords.filter(keyword => {
+                const escaped = keyword.replace(
+                    /[.*+?^${}()|[\]\\]/g,
+                    "\\$&"
+                );
+
+                return new RegExp(
+                    `(^|\\s)${escaped}(?=\\s|$)`,
+                    "i"
+                ).test(productText);
+            });
+
+            if (matchedKeywords.length === 0) {
+                return null;
+            }
+
+            const coverage =
+                matchedKeywords.length / keywords.length;
+
+            if (keywords.length > 1 && coverage < 0.5) {
+                return null;
+            }
+
+            score += matchedKeywords.length * 10;
+
+            if (productText.includes(normalizedQuery)) {
+                score += 30;
+            }
+        }
+
+        if (product.image_url) score += 2;
+
+        if (
+            product.product_url ||
+            product.affiliate_url
+        ) {
+            score += 2;
+        }
+
+        return {
+            ...product,
+            source_type: sourceType,
+            price_vnd: Math.round(priceVnd),
+            product_groups: productGroups,
+            recommendation_score: score
+        };
+    }).filter(Boolean);
+
+    // Ưu tiên sản phẩm đúng loại và liên quan nhất.
+    results.sort((a, b) => {
+        if (
+            b.recommendation_score !==
+            a.recommendation_score
+        ) {
+            return (
+                b.recommendation_score -
+                a.recommendation_score
+            );
+        }
+
+        return b.price_vnd - a.price_vnd;
+    });
+
+    return results.slice(0, 6);
+}
+
+
+
+// =====================================================
 // API CHAT ASSISTANT
 // =====================================================
 
@@ -1755,18 +2486,82 @@ app.post("/api/chat-assistant", async (req, res) => {
             }))
             : [];
 
+        
         // =================================================
-        // 1. ƯU TIÊN XỬ LÝ NHANH BẰNG JAVASCRIPT
+        // 1. TÌM SẢN PHẨM TRỰC TIẾP KHI CÓ TÊN SẢN PHẨM + GIÁ
+        // =================================================
+
+        const directBudget = parseDirectSearchBudget(message);
+        const directQuery = extractDirectProductQuery(message);
+
+        const normalizedMessage = normalizeGiftText(message);
+
+        const hasDirectSearchIntent =
+            /\b(tim|kiem|mua|cho toi xem|goi y san pham)\b/i.test(normalizedMessage);
+
+        if (hasDirectSearchIntent && directQuery.length > 0) {
+            const products = await searchProductsByQuery(
+                directQuery,
+                directBudget
+            );
+
+            console.log("[DIRECT PRODUCT SEARCH]");
+            console.log("Từ khóa:", directQuery);
+            console.log("Ngân sách:", directBudget);
+            console.log("Số sản phẩm:", products.length);
+
+            const slots = {
+                ...currentSlots,
+                budget: directBudget,
+                interests: [directQuery],
+                categories: [directQuery]
+            };
+
+            return res.json({
+                success: true,
+
+                reply: products.length > 0
+                    ? `Mình tìm được ${products.length} sản phẩm ${directQuery}${
+                        directBudget !== null
+                            ? ` có giá không vượt quá ${directBudget.toLocaleString("vi-VN")}đ`
+                            : ""
+                    } đây! 🎁`
+                    : `Mình chưa tìm thấy sản phẩm ${directQuery} phù hợp. Bạn thử từ khóa khác nhé!`,
+                slots,
+                missingFields: [],
+                readyForRecommendation: true,
+                products,
+                productCount: products.length,
+                processingMode: "direct-product-search"
+            });
+        }
+
+
+        // =================================================
+        // 2. NẾU KHÔNG PHẢI TÌM SẢN PHẨM TRỰC TIẾP
+        // TIẾP TỤC QUY TRÌNH TƯ VẤN QUÀ TẶNG CŨ
         // =================================================
 
         const detected = detectFastGiftAnswer(message, currentSlots);
 
+
+        
         if (detected) {
             const slots = mergeFastGiftSlots(currentSlots, detected);
             const missingFields = getGiftMissingFields(slots);
             const readyForRecommendation = missingFields.length === 0;
 
-            const reply = getGiftNextQuestion(missingFields);
+            let products = [];
+            let reply = getGiftNextQuestion(missingFields);
+
+            // Đủ thông tin thì tự động tìm sản phẩm
+            if (readyForRecommendation) {
+                products = await searchChatProducts(slots);
+
+                reply = products.length > 0
+                    ? `Mình đã tìm được ${products.length} sản phẩm phù hợp từ eBay và Lazada cho bạn đây! 🎁`
+                    : "Mình chưa tìm thấy sản phẩm phù hợp từ eBay và Lazada. Bạn thử tăng ngân sách hoặc thay đổi sở thích nhé.";
+            }
 
             console.log(
                 `[GIFTY FAST] ${detected.type} | ${Date.now() - startTime}ms`
@@ -1778,9 +2573,12 @@ app.post("/api/chat-assistant", async (req, res) => {
                 slots,
                 missingFields,
                 readyForRecommendation,
+                products,
+                productCount: products.length,
                 processingMode: "fast"
             });
         }
+
         // Chỉ kiểm tra API Key khi cần gọi Gemini
         if (!process.env.GEMINI_API_KEY) {
             return res.status(500).json({
@@ -1915,24 +2713,81 @@ Trả lời theo JSON Schema đã cung cấp.
     })
 );
 
-        const result = JSON.parse(response.text || "{}");
-        const slots = result.slots || {};
+// Đọc kết quả JSON từ Gemini
+let result;
 
-        const missingFields = getGiftMissingFields(slots);
-        const readyForRecommendation = missingFields.length === 0;
+try {
+    const responseText = typeof response.text === "function"
+        ? response.text()
+        : response.text;
 
-        console.log(
-            `[GIFTY GEMINI] ${Date.now() - startTime}ms`
-        );
+    result = typeof responseText === "string"
+        ? JSON.parse(responseText)
+        : responseText;
 
-        return res.json({
-            success: true,
-            reply: result.reply || "Mình có thể giúp bạn chọn món quà phù hợp nhé!",
-            slots,
-            missingFields,
-            readyForRecommendation,
-            processingMode: "gemini"
-        });
+} catch (error) {
+    console.error("[GEMINI] Không đọc được JSON:", error);
+
+    throw new Error(
+        "Gemini trả về dữ liệu không đúng định dạng JSON."
+    );
+}
+
+// Lấy slots Gemini trả về
+const aiSlots = result?.slots || {};
+
+// Kết hợp thông tin cũ và thông tin mới
+const slots = {
+    ...currentSlots,
+    ...aiSlots,
+
+    interests: Array.isArray(aiSlots.interests) &&
+        aiSlots.interests.length > 0
+        ? aiSlots.interests
+        : (currentSlots.interests || []),
+
+    categories: Array.isArray(aiSlots.categories) &&
+        aiSlots.categories.length > 0
+        ? aiSlots.categories
+        : (currentSlots.categories || []),
+
+    colors: Array.isArray(aiSlots.colors) &&
+        aiSlots.colors.length > 0
+        ? aiSlots.colors
+        : (currentSlots.colors || [])
+};
+
+        
+    const missingFields = getGiftMissingFields(slots);
+    const readyForRecommendation = missingFields.length === 0;
+
+    let products = [];
+    let reply = result.reply || "Mình có thể giúp bạn chọn món quà phù hợp nhé!";
+
+    // Khi đã đủ thông tin, tự động tìm sản phẩm
+    if (readyForRecommendation) {
+        products = await searchChatProducts(slots);
+
+        reply = products.length > 0
+            ? `Mình đã tìm được ${products.length} sản phẩm phù hợp từ eBay và Lazada cho bạn đây! 🎁`
+            : "Hiện tại mình chưa tìm thấy sản phẩm phù hợp từ eBay và Lazada. Bạn có thể thử thay đổi ngân sách hoặc sở thích nhé.";
+    }
+
+    console.log(
+        `[GIFTY GEMINI] ${Date.now() - startTime}ms`
+    );
+
+    return res.json({
+        success: true,
+        reply,
+        slots,
+        missingFields,
+        readyForRecommendation,
+        products,
+        productCount: products.length,
+        processingMode: "gemini"
+    });
+
 
     } catch (error) {
         console.error("Lỗi Gemini chat-assistant:", error);
